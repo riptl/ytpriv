@@ -1,31 +1,25 @@
 package classic
 
 import (
-	"time"
 	"errors"
 	"strings"
 	"strconv"
 )
 
+var durationErr = errors.New("unknown duration code")
+
 // "PT6M57S" => 6 min 57 s
-func parseDuration(d string) (time.Duration, error) {
-	var err error
-	goto start
-
-error:
-	return 0, errors.New("unknown duration code")
-
-start:
-	if d[0:2] != "PT" { goto error }
+func parseDuration(d string) (uint64, error) {
+	if d[0:2] != "PT" { return 0, durationErr }
 	mIndex := strings.IndexByte(d, 'M')
-	if mIndex == -1 { goto error }
+	if mIndex == -1 { return 0, durationErr }
 
 	minutes, err := strconv.ParseUint(d[2:mIndex], 10, 32)
 	if err != nil { return 0, err }
-	seconds, err := strconv.ParseUint(d[mIndex:len(d)-1], 10, 32)
+	seconds, err := strconv.ParseUint(d[mIndex+1:len(d)-1], 10, 32)
 	if err != nil { return 0, err }
 
-	dur := time.Duration(minutes) * time.Minute + time.Duration(seconds) * time.Second
+	dur := minutes * 60 + seconds
 	return dur, nil
 }
 

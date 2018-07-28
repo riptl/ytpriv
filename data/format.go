@@ -1,5 +1,7 @@
 package data
 
+import "encoding/json"
+
 type FormatType uint8
 
 const (
@@ -13,22 +15,45 @@ const (
 )
 
 type Format struct {
-	FormatID string
-	Extension string
-	Width uint32
-	Height uint32
-	VideoCodec string
-	AudioCodec string
-	AudioBitrate uint32
-	Flags FormatType
+	ID           string `json:"id"`
+	Extension    string `json:"ext"`
+	Width        uint32 `json:"width"`
+	Height       uint32 `json:"height"`
+	VideoCodec   string `json:"vcodec"`
+	AudioCodec   string `json:"acodec"`
+	AudioBitrate uint32 `json:"abr"`
+	Flags        FormatType `json:"flags"`
+}
+
+var FormatsById map[string]*Format
+
+func init() {
+	ids := []string {
+		  "5",   "6",  "13",  "17",  "18",  "22",  "34",  "35",
+		 "36",  "37",  "38",  "43",  "44",  "45",  "46",  "59",
+		 "78",  "82",  "83",  "84",  "85", "100", "101", "102",
+		 "91",  "92",  "93",  "94",  "95",  "96", "132", "151",
+		"133", "134", "135", "136", "137", "138", "160", "212",
+		"264", "298", "299", "266", "139", "140", "141", "256",
+		"258", "325", "328", "167", "168", "169", "170", "218",
+		"219", "278", "242", "243", "244", "245", "246", "247",
+		"248", "271", "272", "302", "303", "308", "313", "315",
+		"171", "172", "249", "250", "251",
+	}
+	FormatsById = make(map[string]*Format)
+	for i, id := range ids {
+		format := &Formats[i]
+		if format.ID != id { panic("misaligned IDs: " + id + "/" + format.ID) }
+		FormatsById[id] = format
+	}
 }
 
 // Taken from github.com/rg3/youtube-dl
 // As in youtube_dl/extractor/youtube.py
 var Formats = []Format{
 	// Standard formats
-	{ "5",  "flv",  400, 240, "h263", "mp3",  64, FormatStd },
-	{ "6",  "flv",  450, 270, "h263", "mp3",  64, FormatStd },
+	{  "5", "flv",  400, 240, "h263", "mp3",  64, FormatStd },
+	{  "6", "flv",  450, 270, "h263", "mp3",  64, FormatStd },
 	{ "13", "3gp",    0,   0, "mp4v", "aac",   0, FormatStd },
 	{ "17", "3gp",  176, 144, "mp4v", "aac",  24, FormatStd },
 	{ "18", "mp4",  640, 360, "h264", "aac",  96, FormatStd },
@@ -47,21 +72,21 @@ var Formats = []Format{
 	{ "78", "mp4",   854,  480, "h264", "aac",    128, FormatStd },
 
 	// 3D videos
-	{ "82",  "mp4",  0,  360, "h264", "aac",    128, Format3D },
-	{ "83",  "mp4",  0,  480, "h264", "aac",    128, Format3D },
-	{ "84",  "mp4",  0,  720, "h264", "aac",    192, Format3D },
-	{ "85",  "mp4",  0, 1080, "h264", "aac",    192, Format3D },
+	{  "82", "mp4",  0,  360, "h264", "aac",    128, Format3D },
+	{  "83", "mp4",  0,  480, "h264", "aac",    128, Format3D },
+	{  "84", "mp4",  0,  720, "h264", "aac",    192, Format3D },
+	{  "85", "mp4",  0, 1080, "h264", "aac",    192, Format3D },
 	{ "100", "webm", 0,  360, "vp8",  "vorbis", 128, Format3D },
 	{ "101", "webm", 0,  480, "vp8",  "vorbis", 192, Format3D },
 	{ "102", "webm", 0,  720, "vp8",  "vorbis", 192, Format3D },
 
 	// Apple HTTP Live Streaming
-	{ "91",  "mp4", 0,  144, "h264", "aac",  48, FormatHLS },
-	{ "92",  "mp4", 0,  240, "h264", "aac",  48, FormatHLS },
-	{ "93",  "mp4", 0,  360, "h264", "aac", 128, FormatHLS },
-	{ "94",  "mp4", 0,  480, "h264", "aac", 128, FormatHLS },
-	{ "95",  "mp4", 0,  720, "h264", "aac", 256, FormatHLS },
-	{ "96",  "mp4", 0, 1080, "h264", "aac", 256, FormatHLS },
+	{  "91", "mp4", 0,  144, "h264", "aac",  48, FormatHLS },
+	{  "92", "mp4", 0,  240, "h264", "aac",  48, FormatHLS },
+	{  "93", "mp4", 0,  360, "h264", "aac", 128, FormatHLS },
+	{  "94", "mp4", 0,  480, "h264", "aac", 128, FormatHLS },
+	{  "95", "mp4", 0,  720, "h264", "aac", 256, FormatHLS },
+	{  "96", "mp4", 0, 1080, "h264", "aac", 256, FormatHLS },
 	{ "132", "mp4", 0,  240, "h264", "aac",  48, FormatHLS },
 	{ "151", "mp4", 0,   72, "h264", "aac",  24, FormatHLS },
 
@@ -120,4 +145,20 @@ var Formats = []Format{
 	{ "249", "webm", 0, 0, "", "opus",  50, FormatDASH | FormatAudioOnly },
 	{ "250", "webm", 0, 0, "", "opus",  70, FormatDASH | FormatAudioOnly },
 	{ "251", "webm", 0, 0, "", "opus", 160, FormatDASH | FormatAudioOnly },
+}
+
+func (f FormatType) MarshalJSON() ([]byte, error) {
+	flags := make([]string, 0)
+	setFlag := func(mask FormatType, name string) {
+		if f&mask != 0 {
+			flags = append(flags, name)
+		}
+	}
+	setFlag(FormatVideoOnly, "videoOnly")
+	setFlag(FormatAudioOnly, "audioOnly")
+	setFlag(Format3D, "3d")
+	setFlag(FormatHLS, "hls")
+	setFlag(FormatDASH, "dash")
+	setFlag(FormatHighFps, "hiFps")
+	return json.Marshal(flags)
 }

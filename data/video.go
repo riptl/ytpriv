@@ -14,9 +14,9 @@ type Video struct {
 	URL string `json:"url"`
 	License string `json:"license,omitempty"`
 	Genre string `json:"genre"`
-	Tags []string `json:"tags"`
+	Tags []string `json:"tags,omitempty"`
 	Subtitles []string `json:"subtitles,omitempty"`
-	Duration time.Duration `json:"duration"`
+	Duration uint64 `json:"duration"`
 	FamilyFriendly bool `json:"family_friendly"`
 	Views uint64 `json:"views"`
 	Likes uint64 `json:"likes"`
