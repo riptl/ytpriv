@@ -42,7 +42,6 @@ func (p *parseInfo) parseDescription() error {
 
 	// Save description
 	p.v.Description = buffer.String()
-	println(p.v.Description)
 
 	return nil
 }
