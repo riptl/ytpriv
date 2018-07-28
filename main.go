@@ -5,19 +5,35 @@
 package main
 
 import (
-	"encoding/json"
-	"github.com/terorie/yt-mango/data"
-	"github.com/terorie/yt-mango/classic"
+	"github.com/spf13/cobra"
+	"fmt"
+	"os"
 )
 
+const Version = "v0.1 -- dev"
+
+func printVersion(_ *cobra.Command, _ []string) {
+	fmt.Println("YT-Mango archiver", Version)
+}
+
 func main() {
-	v := data.Video{ID: "kj9mFK62c6E"}
+	rootCmd := cobra.Command{
+		Use:   "yt-mango",
+		Short: "YT-Mango is a scalable video metadata archiver",
+		Long: "YT-Mango is a scalable video metadata archiving utility\n" +
+			"written by terorie with help from the-eye.eu",
+	}
 
-	err := classic.Get(&v)
-	if err != nil { panic(err) }
+	versionCmd := cobra.Command{
+		Use: "version",
+		Short: "Get the version number of yt-mango",
+		Run: printVersion,
+	}
 
-	jsn, err := json.MarshalIndent(v, "", "\t")
-	if err != nil { panic(err) }
+	rootCmd.AddCommand(&versionCmd)
 
-	println(string(jsn))
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
 }

@@ -10,8 +10,10 @@ If you don't have a Go toolchain, grab an executable from the Releases tab
 
 ##### Project structure
 
-- _/common_: commonly used HTTP code
+- _/controller_: Manages workers (sends tasks, gets results, …)
+- _/common_: Commonly used HTTP code
 - _/data_: Data structures
+- _/db_: MongoDB connection
 - _/classic_: Extractor calling the HTML `/watch` API
 - _/watchapi_: Extractor calling the JSON `/watch` API
 
