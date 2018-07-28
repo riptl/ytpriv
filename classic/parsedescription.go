@@ -4,7 +4,7 @@ import (
 	"errors"
 	"golang.org/x/net/html"
 	"bytes"
-	"github.com/terorie/youtube-mango/common"
+	"github.com/terorie/yt-mango/common"
 	"strings"
 )
 

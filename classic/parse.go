@@ -5,7 +5,7 @@ import (
 	"errors"
 	"strconv"
 	"time"
-	"github.com/terorie/youtube-mango/data"
+	"github.com/terorie/yt-mango/data"
 	"regexp"
 	"github.com/valyala/fastjson"
 	"strings"

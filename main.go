@@ -6,8 +6,8 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/terorie/youtube-mango/data"
-	"github.com/terorie/youtube-mango/classic"
+	"github.com/terorie/yt-mango/data"
+	"github.com/terorie/yt-mango/classic"
 )
 
 func main() {

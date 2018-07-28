@@ -1,7 +1,7 @@
 package classic
 
 import (
-	"github.com/terorie/youtube-mango/data"
+	"github.com/terorie/yt-mango/data"
 	"errors"
 )
 

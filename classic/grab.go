@@ -6,7 +6,7 @@ import (
 	"encoding/xml"
 	"time"
 	"github.com/PuerkitoBio/goquery"
-	"github.com/terorie/youtube-mango/data"
+	"github.com/terorie/yt-mango/data"
 )
 
 var transport = http.Transport{

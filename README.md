@@ -1,10 +1,10 @@
-# WIP: youtube-mango 💾
+# WIP: yt-mango 💾
 
-> YouTube metadata extractor inspired by [`youtube-ma` by _CorentinB_][1]
+> YT metadata extractor inspired by [`youtube-ma` by _CorentinB_][1]
 
 ##### Build
 
-Install and compile the Go project with `go get github.com/terorie/youtube-mango`!
+Install and compile the Go project with `go get github.com/terorie/yt-mango`!
 
 If you don't have a Go toolchain, grab an executable from the Releases tab
 
