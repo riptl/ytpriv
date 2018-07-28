@@ -28,14 +28,3 @@ type Subtitle struct {
 	URL string
 	Extension string
 }
-
-type Format struct {
-	FormatID string
-	URL string
-	PlayerURL string
-	Extension string
-	Height uint32
-	FormatNote string
-	AudioCodec string
-	Abr float32
-}
