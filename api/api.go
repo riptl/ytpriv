@@ -16,6 +16,14 @@ type API struct {
 // TODO Fallback option
 var DefaultAPI *API = nil
 
+// TODO: Remove when everything is implemented
+var TempAPI = API{
+	GetVideo: apiclassic.GetVideo,
+	GetVideoSubtitleList: apiclassic.GetVideoSubtitleList,
+	GetChannel: apiclassic.GetChannel,
+	GetChannelVideoURLs: apijson.GetChannelVideoURLs,
+}
+
 var ClassicAPI = API{
 	GetVideo: apiclassic.GetVideo,
 	GetVideoSubtitleList: apiclassic.GetVideoSubtitleList,

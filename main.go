@@ -35,8 +35,10 @@ func main() {
 				fmt.Println(Version)
 				os.Exit(0)
 			}
+		},
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			switch forceAPI {
-			case "": break
+			case "": api.DefaultAPI = &api.TempAPI
 			case "classic": api.DefaultAPI = &api.ClassicAPI
 			case "json": api.DefaultAPI = &api.JsonAPI
 			default:
