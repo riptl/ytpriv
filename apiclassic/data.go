@@ -1,4 +1,4 @@
-package classic
+package apiclassic
 
 type XMLSubTrackList struct {
 	Tracks []struct {

@@ -1,4 +1,4 @@
-package browseajax
+package apijson
 
 import (
 	"bytes"
@@ -6,7 +6,7 @@ import (
 	"encoding/base64"
 )
 
-func GenerateToken(channelId string, page uint64) string {
+func GenChannelPageToken(channelId string, page uint64) string {
 	// Generate the inner token
 	token := genInnerToken(page)
 

@@ -1,4 +1,4 @@
-package classic
+package apiclassic
 
 import (
 	"github.com/PuerkitoBio/goquery"

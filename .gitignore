@@ -1,5 +1,9 @@
 # IntelliJ
-/idea/
+/.idea/
 
 # Apple
 .DS_STORE
+
+# Executables
+/yt-mango
+/yt-mango.exe

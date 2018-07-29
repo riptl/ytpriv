@@ -1,27 +1,16 @@
-package main
+package cmd
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/terorie/yt-mango/browseajax"
-	"regexp"
+	"net/url"
 	"fmt"
 	"os"
-	"net/url"
 	"strings"
-	"log"
 	"time"
 	"bufio"
+	"log"
+	"github.com/terorie/yt-mango/apijson"
 )
-
-var force bool
-var offset uint32
-
-var channelCmd = cobra.Command{
-	Use: "channel",
-	Short: "Get information about a channel",
-}
-
-var matchChannelID = regexp.MustCompile("^([\\w\\-]|(%3[dD]))+$")
 
 var channelDumpCmd = cobra.Command{
 	Use: "dumpurls <channel ID> <file>",
@@ -85,7 +74,7 @@ var channelDumpCmd = cobra.Command{
 
 		totalURLs := 0
 		for i := offset; true; i++ {
-			channelURLs, err := browseajax.GetPage(channelID, uint(i))
+			channelURLs, err := apijson.GetChannelVideoURLs(channelID, uint(i))
 			if err != nil {
 				log.Printf("Aborting on error %v.", err)
 				break
@@ -106,10 +95,4 @@ var channelDumpCmd = cobra.Command{
 		duration := time.Since(startTime)
 		log.Printf("Got %d URLs in %s.", totalURLs, duration.String())
 	},
-}
-
-func init() {
-	channelDumpCmd.Flags().BoolVarP(&force, "force", "f", false, "Overwrite the output file if it already exists")
-	channelDumpCmd.Flags().Uint32Var(&offset, "page-offset", 1, "Start getting videos at this page. (A page is usually 30 videos)")
-	channelCmd.AddCommand(&channelDumpCmd)
 }
