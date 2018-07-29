@@ -21,7 +21,7 @@ func main() {
 		Use:   "yt-mango",
 		Short: "YT-Mango is a scalable video metadata archiver",
 		Long: "YT-Mango is a scalable video metadata archiving utility\n" +
-			"written by terorie with help from the-eye.eu",
+			"written by terorie for https://the-eye.eu/",
 	}
 
 	versionCmd := cobra.Command{
@@ -31,6 +31,7 @@ func main() {
 	}
 
 	rootCmd.AddCommand(&versionCmd)
+	rootCmd.AddCommand(&channelCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)

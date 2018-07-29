@@ -3,14 +3,16 @@ package browseajax
 import (
 	"github.com/valyala/fastjson"
 	"errors"
+	"strings"
 )
 
-var missingData = errors.New("missing data")
+var MissingData = errors.New("missing data")
+var ServerError = errors.New("server error")
 
-func ParsePage(rootObj *fastjson.Value) error {
+func ParsePage(rootObj *fastjson.Value) ([]string, error) {
 	// Root as array
 	root, err := rootObj.Array()
-	if err != nil { return err }
+	if err != nil { return nil, err }
 
 	// Find response container
 	var container *fastjson.Value
@@ -20,9 +22,18 @@ func ParsePage(rootObj *fastjson.Value) error {
 			break
 		}
 	}
-	if container == nil { return missingData }
+	if container == nil { return nil, MissingData
+	}
 
 	// Get error obj
+	errorExists := container.Exists(
+		"response",
+		"responseContext",
+		"errors",
+		"error",
+	)
+	if errorExists { return nil, ServerError
+	}
 
 	// Get items from grid
 	itemsObj := container.Get(
@@ -31,11 +42,14 @@ func ParsePage(rootObj *fastjson.Value) error {
 		"gridContinuation",
 		"items",
 	)
-	if itemsObj == nil { return missingData }
+	if itemsObj == nil { return nil, MissingData
+	}
 
 	// Items as array
 	items, err := itemsObj.Array()
-	if err != nil { return err }
+	if err != nil { return nil, err }
+
+	urls := make([]string, 0)
 
 	// Enumerate
 	for _, item := range items {
@@ -47,14 +61,17 @@ func ParsePage(rootObj *fastjson.Value) error {
 			"webCommandMetadata",
 			"url",
 		)
-		if urlObj == nil { return missingData }
+		if urlObj == nil { return nil, MissingData
+		}
 
 		// URL as string
 		urlBytes, err := urlObj.StringBytes()
-		if err != nil { return err }
+		if err != nil { return nil, err }
 		url := string(urlBytes)
 
-		println(url)
+		if strings.HasPrefix(url, "/watch?v") {
+			urls = append(urls, "https://www.youtube.com" + url)
+		}
 	}
-	return nil
+	return urls, nil
 }
