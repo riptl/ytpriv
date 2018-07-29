@@ -9,6 +9,7 @@ import (
 	"os"
 	"github.com/terorie/yt-mango/cmd"
 	"log"
+	"github.com/terorie/yt-mango/api"
 )
 
 const Version = "v0.1 -- dev"
@@ -22,6 +23,8 @@ func main() {
 	log.SetOutput(os.Stderr)
 
 	var printVersion bool
+	var forceAPI string
+
 	rootCmd := cobra.Command{
 		Use:   "yt-mango",
 		Short: "YT-Mango is a scalable video metadata archiver",
@@ -32,10 +35,23 @@ func main() {
 				fmt.Println(Version)
 				os.Exit(0)
 			}
+			switch forceAPI {
+			case "": break
+			case "classic": api.DefaultAPI = &api.ClassicAPI
+			case "json": api.DefaultAPI = &api.JsonAPI
+			default:
+				fmt.Fprintln(os.Stderr, "Invalid API specified.\n" +
+					"Valid options are: \"classic\" and \"json\"")
+				os.Exit(1)
+			}
 		},
 	}
+
 	rootCmd.Flags().BoolVar(&printVersion, "version", false,
-		fmt.Sprintf("Print the version (" + Version +") and exit"), )
+		fmt.Sprintf("Print the version (" + Version +") and exit"))
+	rootCmd.Flags().StringVarP(&forceAPI, "api", "a", "",
+		"Use the specified API for all calls.\n" +
+		"Possible options: \"classic\" and \"json\"")
 
 	rootCmd.AddCommand(&cmd.Channel)
 	rootCmd.AddCommand(&cmd.Video)

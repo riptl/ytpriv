@@ -67,6 +67,7 @@ func GrabChannelPage(channelID string, page uint) (root *fastjson.Value, err err
 
 func setHeaders(h *http.Header) {
 	h.Add("Host", "www.youtube.com")
+	h.Add("User-Agent", "yt-mango/0.1")
 	h.Add("X-YouTube-Client-Name", "1")
 	h.Add("X-YouTube-Client-Version", "2.20170707")
 }

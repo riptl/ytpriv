@@ -9,7 +9,7 @@ func GetVideo(v *data.Video) error {
 	if len(v.ID) == 0 { return errors.New("no video ID") }
 
 	// Download the doc tree
-	doc, err := grab(v)
+	doc, err := GrabVideo(v.ID)
 	if err != nil { return err }
 
 	// Parse it
@@ -18,6 +18,15 @@ func GetVideo(v *data.Video) error {
 	if err != nil { return err }
 
 	return nil
+}
+
+func GetVideoSubtitleList(v *data.Video) (err error) {
+	tracks, err := GrabSubtitleList(v.ID)
+	if err != nil { return }
+	for _, track := range tracks.Tracks {
+		v.Subtitles = append(v.Subtitles, track.LangCode)
+	}
+	return
 }
 
 func GetChannel(c *data.Channel) error {

@@ -9,7 +9,7 @@ import (
 	"time"
 	"bufio"
 	"log"
-	"github.com/terorie/yt-mango/apijson"
+	"github.com/terorie/yt-mango/api"
 )
 
 var channelDumpCmd = cobra.Command{
@@ -74,7 +74,7 @@ var channelDumpCmd = cobra.Command{
 
 		totalURLs := 0
 		for i := offset; true; i++ {
-			channelURLs, err := apijson.GetChannelVideoURLs(channelID, uint(i))
+			channelURLs, err := api.DefaultAPI.GetChannelVideoURLs(channelID, uint(i))
 			if err != nil {
 				log.Printf("Aborting on error %v.", err)
 				break
