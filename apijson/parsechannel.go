@@ -4,12 +4,29 @@ import (
 	"github.com/valyala/fastjson"
 	"errors"
 	"strings"
+	"net/http"
+	"io/ioutil"
+	"fmt"
 )
 
 var MissingData = errors.New("missing data")
 var ServerError = errors.New("server error")
 
-func ParseChannelPageLinks(rootObj *fastjson.Value) ([]string, error) {
+func ParseChannelVideoURLs(res *http.Response) ([]string, error) {
+	if res.StatusCode != 200 {
+		return nil, fmt.Errorf("HTTP error: %s", res.Request.URL.String())
+	}
+
+	// Download response
+	defer res.Body.Close()
+	buf, err := ioutil.ReadAll(res.Body)
+	if err != nil { return nil, err }
+
+	// Parse JSON
+	var p fastjson.Parser
+	rootObj, err := p.ParseBytes(buf)
+	if err != nil { return nil, err }
+
 	// Root as array
 	root, err := rootObj.Array()
 	if err != nil { return nil, err }

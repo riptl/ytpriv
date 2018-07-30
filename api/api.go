@@ -2,29 +2,37 @@ package api
 
 import (
 	"github.com/terorie/yt-mango/data"
-	"github.com/terorie/yt-mango/apiclassic"
+	"net/http"
 	"github.com/terorie/yt-mango/apijson"
 )
 
 type API struct {
-	GetVideo func(*data.Video) error
-	GetVideoSubtitleList func(*data.Video) error
-	GetChannel func(*data.Channel) error
-	GetChannelVideoURLs func(channelID string, page uint) ([]string, error)
+	GrabVideo func(videoID string) *http.Request
+	ParseVideo func(*data.Video, *http.Response) error
+
+	GrabVideoSubtitleList func(videoID string) *http.Request
+	ParseVideoSubtitleList func(*data.Video, *http.Response) error
+
+	GrabChannel func(channelID string) *http.Request
+	ParseChannel func(*data.Channel, *http.Response) error
+
+	GrabChannelPage func(channelID string, page uint) *http.Request
+	ParseChannelVideoURLs func(*http.Response) ([]string, error)
 }
 
 // TODO Fallback option
-var DefaultAPI *API = nil
+var Main *API = nil
 
 // TODO: Remove when everything is implemented
 var TempAPI = API{
-	GetVideo: apiclassic.GetVideo,
-	GetVideoSubtitleList: apiclassic.GetVideoSubtitleList,
-	GetChannel: apiclassic.GetChannel,
-	GetChannelVideoURLs: apijson.GetChannelVideoURLs,
+	GrabVideo: apijson.GrabVideo,
+	ParseVideo: apijson.ParseVideo,
+
+	GrabChannelPage: apijson.GrabChannelPage,
+	ParseChannelVideoURLs: apijson.ParseChannelVideoURLs,
 }
 
-var ClassicAPI = API{
+/*var ClassicAPI = API{
 	GetVideo: apiclassic.GetVideo,
 	GetVideoSubtitleList: apiclassic.GetVideoSubtitleList,
 	GetChannel: apiclassic.GetChannel,
@@ -36,4 +44,4 @@ var JsonAPI = API{
 	GetVideoSubtitleList: apiclassic.GetVideoSubtitleList,
 	GetChannel: apijson.GetChannel,
 	GetChannelVideoURLs: apijson.GetChannelVideoURLs,
-}
+}*/

@@ -4,12 +4,25 @@ import (
 	"github.com/valyala/fastjson"
 	"github.com/terorie/yt-mango/data"
 	"errors"
+	"io/ioutil"
+	"net/http"
 )
 
 var missingData = errors.New("missing data")
 var unexpectedType = errors.New("unexpected type")
 
-func ParseVideo(v *data.Video, root *fastjson.Value) error {
+func ParseVideo(v *data.Video, res *http.Response) error {
+	defer res.Body.Close()
+
+	// Download response
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil { return err }
+
+	// Parse JSON
+	var p fastjson.Parser
+	root, err := p.ParseBytes(body)
+	if err != nil { return err }
+
 	rootArray := root.GetArray()
 	if rootArray == nil { return unexpectedType }
 

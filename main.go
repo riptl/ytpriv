@@ -10,13 +10,10 @@ import (
 	"github.com/terorie/yt-mango/cmd"
 	"log"
 	"github.com/terorie/yt-mango/api"
+	"github.com/terorie/yt-mango/common"
 )
 
 const Version = "v0.1 -- dev"
-
-func printVersion(_ *cobra.Command, _ []string) {
-	fmt.Println("YT-Mango archiver", Version)
-}
 
 func main() {
 	// All diagnostics (logging) should go to stderr
@@ -24,6 +21,7 @@ func main() {
 
 	var printVersion bool
 	var forceAPI string
+	var concurrentRequests uint
 
 	rootCmd := cobra.Command{
 		Use:   "yt-mango",
@@ -37,10 +35,12 @@ func main() {
 			}
 		},
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			common.InitAsyncHTTP(concurrentRequests)
+
 			switch forceAPI {
-			case "": api.DefaultAPI = &api.TempAPI
-			case "classic": api.DefaultAPI = &api.ClassicAPI
-			case "json": api.DefaultAPI = &api.JsonAPI
+			case "": api.Main = &api.TempAPI
+			//case "classic": api.Main = &api.ClassicAPI
+			//case "json": api.Main = &api.JsonAPI
 			default:
 				fmt.Fprintln(os.Stderr, "Invalid API specified.\n" +
 					"Valid options are: \"classic\" and \"json\"")
@@ -54,6 +54,8 @@ func main() {
 	rootCmd.Flags().StringVarP(&forceAPI, "api", "a", "",
 		"Use the specified API for all calls.\n" +
 		"Possible options: \"classic\" and \"json\"")
+	rootCmd.PersistentFlags().UintVarP(&concurrentRequests, "concurrency", "c", 4,
+		"Number of maximum concurrent HTTP requests")
 
 	rootCmd.AddCommand(&cmd.Channel)
 	rootCmd.AddCommand(&cmd.Video)
