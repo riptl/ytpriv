@@ -10,7 +10,7 @@ import (
 	"github.com/terorie/yt-mango/cmd"
 	"log"
 	"github.com/terorie/yt-mango/api"
-	"github.com/terorie/yt-mango/common"
+	"github.com/terorie/yt-mango/net"
 )
 
 const Version = "v0.1 -- dev"
@@ -35,7 +35,7 @@ func main() {
 			}
 		},
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			common.InitAsyncHTTP(concurrentRequests)
+			net.MaxWorkers = uint32(concurrentRequests)
 
 			switch forceAPI {
 			case "": api.Main = &api.TempAPI

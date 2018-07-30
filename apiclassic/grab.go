@@ -5,7 +5,7 @@ import (
 	"errors"
 	"encoding/xml"
 	"github.com/PuerkitoBio/goquery"
-	"github.com/terorie/yt-mango/common"
+	"github.com/terorie/yt-mango/net"
 )
 
 const mainURL = "https://www.youtube.com/watch?has_verified=1&bpctr=6969696969&v="
@@ -17,7 +17,7 @@ func GrabVideo(videoID string) (doc *goquery.Document, err error) {
 	if err != nil { return }
 	setHeaders(&req.Header)
 
-	res, err := common.Client.Do(req)
+	res, err := net.Client.Do(req)
 	if err != nil { return }
 	if res.StatusCode != 200 { return nil, errors.New("HTTP failure") }
 
@@ -34,7 +34,7 @@ func GrabSubtitleList(videoID string) (tracks *XMLSubTrackList, err error) {
 	if err != nil { return }
 	setHeaders(&req.Header)
 
-	res, err := common.Client.Do(req)
+	res, err := net.Client.Do(req)
 	if err != nil { return }
 	if res.StatusCode != 200 { return nil, errors.New("HTTP failure") }
 

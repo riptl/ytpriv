@@ -4,7 +4,7 @@ import (
 	"errors"
 	"golang.org/x/net/html"
 	"bytes"
-	"github.com/terorie/yt-mango/common"
+	"github.com/terorie/yt-mango/net"
 	"strings"
 )
 
@@ -24,7 +24,7 @@ func (p *parseInfo) parseDescription() error {
 		case html.TextNode:
 			// FIXME: "&amp;lt;" gets parsed to => "<"
 			// Write text to buffer, escaping markdown
-			err := common.MarkdownTextEscape.ToBuffer(c.Data, &buffer)
+			err := net.MarkdownTextEscape.ToBuffer(c.Data, &buffer)
 			if err != nil { return err }
 		case html.ElementNode:
 			switch c.Data {
@@ -70,7 +70,7 @@ func parseLink(c *html.Node, dest *bytes.Buffer) error {
 				link, err := decodeLink(attr.Val)
 				if err != nil { return err }
 				// Escape to markdown
-				link, err = common.MarkdownLinkEscape.ToString(link)
+				link, err = net.MarkdownLinkEscape.ToString(link)
 				if err != nil { return err }
 				// Write to buffer
 				dest.WriteString(fmt.Sprintf("[%s](%s)\n", text, link))
