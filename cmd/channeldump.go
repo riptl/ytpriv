@@ -2,9 +2,7 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-	"net/url"
 	"os"
-	"strings"
 	"time"
 	"bufio"
 	"log"
@@ -39,35 +37,10 @@ var channelDumpCmd = cobra.Command{
 		}
 		channelDumpContext.printResults = printResults
 
-		if !matchChannelID.MatchString(channelID) {
-			// Check if youtube.com domain
-			_url, err := url.Parse(channelID)
-			if err != nil || (_url.Host != "www.youtube.com" && _url.Host != "youtube.com") {
-				log.Fatal("Not a channel ID:", channelID)
-				os.Exit(1)
-			}
-
-			// Check if old /user/ URL
-			if strings.HasPrefix(_url.Path, "/user/") {
-				// TODO Implement extraction of channel ID
-				log.Fatal("New /channel/ link is required!\n" +
-					"The old /user/ links do not work.")
-				os.Exit(1)
-			}
-
-			// Remove /channel/ path
-			channelID = strings.TrimPrefix(_url.Path, "/channel/")
-			if len(channelID) == len(_url.Path) {
-				// No such prefix to be removed
-				log.Fatal("Not a channel ID:", channelID)
-				os.Exit(1)
-			}
-
-			// Remove rest of path from channel ID
-			slashIndex := strings.IndexRune(channelID, '/')
-			if slashIndex != -1 {
-				channelID = channelID[:slashIndex]
-			}
+		channelID, err := api.GetChannelID(channelID)
+		if err != nil {
+			log.Print(err)
+			os.Exit(1)
 		}
 
 		log.Printf("Starting work on channel ID \"%s\".", channelID)
@@ -115,13 +88,11 @@ var channelDumpCmd = cobra.Command{
 			page++
 		}
 		terminate:
-		log.Printf("&")
 
 		// Requests sent, wait for remaining requests to finish
 		for {
-			done := atomic.LoadUint64(&channelDumpContext.pagesDone)
-			// Page starts at 1
-			target := uint64(page) - 1
+			done := uint64(offset) + atomic.LoadUint64(&channelDumpContext.pagesDone)
+			target := uint64(page)
 			if done >= target { break }
 
 			// TODO use semaphore
