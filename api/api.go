@@ -4,6 +4,7 @@ import (
 	"github.com/terorie/yt-mango/data"
 	"net/http"
 	"github.com/terorie/yt-mango/apijson"
+	"github.com/terorie/yt-mango/apiclassic"
 )
 
 type API struct {
@@ -25,23 +26,25 @@ var Main *API = nil
 
 // TODO: Remove when everything is implemented
 var TempAPI = API{
-	GrabVideo: apijson.GrabVideo,
-	ParseVideo: apijson.ParseVideo,
+	GrabVideo: apiclassic.GrabVideo,
+	ParseVideo: apiclassic.ParseVideo,
+
+	GrabChannel: apiclassic.GrabChannel,
+	ParseChannel: apiclassic.ParseChannel,
 
 	GrabChannelPage: apijson.GrabChannelPage,
 	ParseChannelVideoURLs: apijson.ParseChannelVideoURLs,
 }
 
-/*var ClassicAPI = API{
-	GetVideo: apiclassic.GetVideo,
-	GetVideoSubtitleList: apiclassic.GetVideoSubtitleList,
-	GetChannel: apiclassic.GetChannel,
-	GetChannelVideoURLs: apiclassic.GetChannelVideoURLs,
+var ClassicAPI = API{
+	GrabVideo: apiclassic.GrabVideo,
+	ParseVideo: apiclassic.ParseVideo,
+
+	GrabChannel: apiclassic.GrabChannel,
+	ParseChannel: apiclassic.ParseChannel,
 }
 
 var JsonAPI = API{
-	GetVideo: apijson.GetVideo,
-	GetVideoSubtitleList: apiclassic.GetVideoSubtitleList,
-	GetChannel: apijson.GetChannel,
-	GetChannelVideoURLs: apijson.GetChannelVideoURLs,
-}*/
+	GrabChannelPage: apijson.GrabChannelPage,
+	ParseChannelVideoURLs: apijson.ParseChannelVideoURLs,
+}

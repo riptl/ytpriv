@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"github.com/valyala/fastjson"
 	"strings"
+	"net/http"
 )
 
 const likeBtnSelector = ".like-button-renderer-like-button-unclicked"
@@ -19,12 +20,23 @@ const channelNameSelector = ".yt-uix-sessionlink"
 
 var playerConfigErr = errors.New("failed to parse player config")
 
-type parseInfo struct {
+func ParseVideo(v *data.Video, res *http.Response) (err error) {
+	if res.StatusCode != 200 { return errors.New("HTTP failure") }
+
+	defer res.Body.Close()
+	doc, err := goquery.NewDocumentFromReader(res.Body)
+	if err != nil { return }
+
+	p := parseVideoInfo{v, doc}
+	return p.parse()
+}
+
+type parseVideoInfo struct {
 	v *data.Video
 	doc *goquery.Document
 }
 
-func (p *parseInfo) parse() error {
+func (p *parseVideoInfo) parse() error {
 	if err := p.parseLikeDislike();
 		err != nil { return err }
 	if err := p.parseViewCount();
@@ -40,7 +52,7 @@ func (p *parseInfo) parse() error {
 	return nil
 }
 
-func (p *parseInfo) parseLikeDislike() error {
+func (p *parseVideoInfo) parseLikeDislike() error {
 	likeText := p.doc.Find(likeBtnSelector).First().Text()
 	dislikeText := p.doc.Find(dislikeBtnSelector).First().Text()
 
@@ -57,7 +69,7 @@ func (p *parseInfo) parseLikeDislike() error {
 	return nil
 }
 
-func (p *parseInfo) parseViewCount() error {
+func (p *parseVideoInfo) parseViewCount() error {
 	viewCountText := p.doc.Find(viewCountSelector).First().Text()
 	viewCount, err := extractNumber(viewCountText)
 	if err != nil { return err }
@@ -65,7 +77,7 @@ func (p *parseInfo) parseViewCount() error {
 	return nil
 }
 
-func (p *parseInfo) parseUploader() error {
+func (p *parseVideoInfo) parseUploader() error {
 	userInfo := p.doc.Find(userInfoSelector)
 	userLinkNode := userInfo.Find(".yt-uix-sessionlink")
 
@@ -81,30 +93,12 @@ func (p *parseInfo) parseUploader() error {
 	return nil
 }
 
-func (p *parseInfo) parseMetas() error {
-	metas := p.doc.Find("meta")
-	// For each <meta>
-	for _, node := range metas.Nodes {
-		// Attributes
-		var content string
-		var itemprop string
-		var prop string
-
-		// Parse attributes
-		for _, attr := range node.Attr {
-			switch attr.Key {
-			case "property": prop = attr.Val
-			case "itemprop": itemprop = attr.Val
-			case "content": content = attr.Val
-			}
-		}
-
-		// Content not set
-		if len(content) == 0 { continue }
-
-		// <meta property …
-		if len(prop) != 0 {
-			switch prop {
+func (p *parseVideoInfo) parseMetas() (err error) {
+	enumMetas(p.doc.Selection, func(tag metaTag)bool {
+		content := tag.content
+		switch tag.typ {
+		case metaProperty:
+			switch tag.name {
 			case "og:title":
 				p.v.Title = content
 			case "og:video:tag":
@@ -114,11 +108,8 @@ func (p *parseInfo) parseMetas() error {
 			case "og:image":
 				p.v.Thumbnail = content
 			}
-			continue
-		}
-		// <meta itemprop …
-		if len(itemprop) != 0 {
-			switch itemprop {
+		case metaItemProp:
+			switch tag.name {
 			case "datePublished":
 				if val, err := time.Parse("2006-01-02", content);
 					err == nil { p.v.UploadDate = val }
@@ -130,19 +121,20 @@ func (p *parseInfo) parseMetas() error {
 				if val, err := parseDuration(content); err == nil {
 					p.v.Duration = val
 				} else {
-					return err
+					return false
 				}
 			case "isFamilyFriendly":
 				if val, err := strconv.ParseBool(content);
 					err == nil { p.v.FamilyFriendly = val }
 			}
-			continue
 		}
-	}
-	return nil
+		return true
+	})
+
+	return err
 }
 
-func (p *parseInfo) parsePlayerConfig() error {
+func (p *parseVideoInfo) parsePlayerConfig() error {
 	var json string
 
 	p.doc.Find("script").EachWithBreak(func(_ int, s *goquery.Selection) bool {

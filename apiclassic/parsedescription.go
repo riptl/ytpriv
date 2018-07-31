@@ -4,13 +4,13 @@ import (
 	"errors"
 	"golang.org/x/net/html"
 	"bytes"
-	"github.com/terorie/yt-mango/net"
 	"strings"
+	"github.com/terorie/yt-mango/util"
 )
 
 const descriptionSelector = "#eow-description"
 
-func (p *parseInfo) parseDescription() error {
+func (p *parseVideoInfo) parseDescription() error {
 	// Find description root
 	descNode := p.doc.Find(descriptionSelector).First()
 	if len(descNode.Nodes) == 0 { return errors.New("could not find description") }
@@ -24,7 +24,7 @@ func (p *parseInfo) parseDescription() error {
 		case html.TextNode:
 			// FIXME: "&amp;lt;" gets parsed to => "<"
 			// Write text to buffer, escaping markdown
-			err := net.MarkdownTextEscape.ToBuffer(c.Data, &buffer)
+			err := util.MarkdownTextEscape.ToBuffer(c.Data, &buffer)
 			if err != nil { return err }
 		case html.ElementNode:
 			switch c.Data {

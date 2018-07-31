@@ -8,7 +8,6 @@ const videoURL = "https://www.youtube.com/watch?pbj=1&v="
 const channelURL = "https://www.youtube.com/browse_ajax?ctoken="
 
 func GrabVideo(videoID string) *http.Request {
-	// Prepare request
 	req, err := http.NewRequest("GET", videoURL + videoID, nil)
 	if err != nil { panic(err) }
 	setHeaders(&req.Header)

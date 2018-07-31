@@ -2,37 +2,41 @@ package api
 
 import (
 	"regexp"
-	"os"
 	"strings"
 	"log"
 	"net/url"
 )
 
-var matchChannelID = regexp.MustCompile("^([\\w\\-]|(%3[dD]))+$")
+// FIXME: API package should be abstract, no utility code in here
 
-func GetChannelID(chanURL string) (string, error) {
+var matchChannelID = regexp.MustCompile("^([\\w\\-]|(%3[dD]))+$")
+var matchVideoID = regexp.MustCompile("^[\\w\\-]+$")
+
+// Input: Channel ID or link to YT channel page
+// Output: Channel ID or "" on error
+func GetChannelID(chanURL string) string {
 	if !matchChannelID.MatchString(chanURL) {
 		// Check if youtube.com domain
 		_url, err := url.Parse(chanURL)
 		if err != nil || (_url.Host != "www.youtube.com" && _url.Host != "youtube.com") {
 			log.Fatal("Not a channel ID:", chanURL)
-			os.Exit(1)
+			return ""
 		}
 
 		// Check if old /user/ URL
 		if strings.HasPrefix(_url.Path, "/user/") {
 			// TODO Implement extraction of channel ID
-			log.Fatal("New /channel/ link is required!\n" +
-				"The old /user/ links do not work.")
-			os.Exit(1)
+			log.Print("New /channel/ link is required!\n" +
+				"The old /user/ links do not work:", chanURL)
+			return ""
 		}
 
 		// Remove /channel/ path
 		channelID := strings.TrimPrefix(_url.Path, "/channel/")
 		if len(channelID) == len(_url.Path) {
 			// No such prefix to be removed
-			log.Fatal("Not a channel ID:", channelID)
-			os.Exit(1)
+			log.Print("Not a channel ID:", channelID)
+			return ""
 		}
 
 		// Remove rest of path from channel ID
@@ -41,9 +45,40 @@ func GetChannelID(chanURL string) (string, error) {
 			channelID = channelID[:slashIndex]
 		}
 
-		return channelID, nil
+		return channelID
 	} else {
 		// It's already a channel ID
-		return chanURL, nil
+		return chanURL
+	}
+}
+
+func GetVideoID(vidURL string) string {
+	if !matchVideoID.MatchString(vidURL) {
+		// Check if youtube.com domain
+		_url, err := url.Parse(vidURL)
+		if err != nil || (_url.Host != "www.youtube.com" && _url.Host != "youtube.com") {
+			log.Fatal("Not a video ID:", vidURL)
+			return ""
+		}
+
+		// TODO Support other URLs (/v or /embed)
+
+		// Check if watch path
+		if !strings.HasPrefix(_url.Path, "/watch") {
+			log.Fatal("Not a watch URL:", vidURL)
+			return ""
+		}
+
+		// Parse query string
+		query := _url.Query()
+		videoID := query.Get("v")
+		if videoID == "" {
+			log.Fatal("Invalid watch URL:", vidURL)
+			return ""
+		}
+
+		return videoID
+	} else {
+		return vidURL
 	}
 }

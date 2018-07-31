@@ -4,31 +4,22 @@ import (
 	"net/http"
 	"errors"
 	"encoding/xml"
-	"github.com/PuerkitoBio/goquery"
 	"github.com/terorie/yt-mango/net"
+	"fmt"
 )
 
-const mainURL = "https://www.youtube.com/watch?has_verified=1&bpctr=6969696969&v="
+const videoURL = "https://www.youtube.com/watch?has_verified=1&bpctr=6969696969&v="
 const subtitleURL = "https://video.google.com/timedtext?type=list&v="
+const channelURL = "https://www.youtube.com/channel/%s/about"
 
-// Grabs a HTML video page and returns the document tree
-func GrabVideo(videoID string) (doc *goquery.Document, err error) {
-	req, err := http.NewRequest("GET", mainURL + videoID, nil)
-	if err != nil { return }
+func GrabVideo(videoID string) *http.Request {
+	req, err := http.NewRequest("GET", videoURL + videoID, nil)
+	if err != nil { panic(err) }
 	setHeaders(&req.Header)
 
-	res, err := net.Client.Do(req)
-	if err != nil { return }
-	if res.StatusCode != 200 { return nil, errors.New("HTTP failure") }
-
-	defer res.Body.Close()
-	doc, err = goquery.NewDocumentFromReader(res.Body)
-	if err != nil { return nil, err }
-
-	return
+	return req
 }
 
-// Grabs and parses a subtitle list
 func GrabSubtitleList(videoID string) (tracks *XMLSubTrackList, err error) {
 	req, err := http.NewRequest("GET", subtitleURL + videoID, nil)
 	if err != nil { return }
@@ -44,6 +35,14 @@ func GrabSubtitleList(videoID string) (tracks *XMLSubTrackList, err error) {
 	tracks = new(XMLSubTrackList)
 	err = decoder.Decode(tracks)
 	return
+}
+
+func GrabChannel(channelID string) *http.Request {
+	req, err := http.NewRequest("GET", fmt.Sprintf(channelURL, channelID), nil)
+	if err != nil { panic(err) }
+	setHeaders(&req.Header)
+
+	return req
 }
 
 func setHeaders(h *http.Header) {

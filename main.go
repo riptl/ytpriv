@@ -39,8 +39,8 @@ func main() {
 
 			switch forceAPI {
 			case "": api.Main = &api.TempAPI
-			//case "classic": api.Main = &api.ClassicAPI
-			//case "json": api.Main = &api.JsonAPI
+			case "classic": api.Main = &api.ClassicAPI
+			case "json": api.Main = &api.JsonAPI
 			default:
 				fmt.Fprintln(os.Stderr, "Invalid API specified.\n" +
 					"Valid options are: \"classic\" and \"json\"")
