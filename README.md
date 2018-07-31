@@ -2,7 +2,7 @@
 
 > YT metadata extractor inspired by [`youtube-ma` by _CorentinB_][youtube-ma]
 
-__Warning: Very WIP rn!__
+__Warning: Very WIP!__ Only `channel dumpurls` and `video detail` work rn
 
 ##### Build
 
