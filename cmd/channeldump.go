@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"github.com/terorie/yt-mango/net"
 	"sync/atomic"
-	"errors"
 	"sync"
 )
 
@@ -30,8 +29,8 @@ var channelDumpContext = struct {
 	// Additional +1 is added if additional
 	// are planned to be requested
 	pagesToReceive sync.WaitGroup
-	// If set to non-zero, an error was received
-	errorOccurred int32
+	// 0 = no event, 1 = error, 2 = end of data
+	eventOccured int32
 }{}
 
 // The channel dump route lists
@@ -93,8 +92,8 @@ func doChannelDump(_ *cobra.Command, args []string) {
 
 	page := offset
 	for {
-		// Terminate if error detected
-		if atomic.LoadInt32(&channelDumpContext.errorOccurred) != 0 {
+		// Terminate if error or end detected
+		if atomic.LoadInt32(&channelDumpContext.eventOccured) != 0 {
 			goto terminate
 		}
 		// Send new requests
@@ -117,7 +116,7 @@ func doChannelDump(_ *cobra.Command, args []string) {
 // The routine exits if a value on "terminateSub" is received.
 // For every incoming result (error or response),
 // the "pagesToReceive" counter is decreased.
-// If an error is received, the "errorOccurred" flag is set.
+// If an error is received, the "eventOccured" flag is set.
 func channelDumpResults(results chan net.JobResult, terminateSub chan bool) {
 	totalURLs := 0
 	for {
@@ -133,8 +132,11 @@ func channelDumpResults(results chan net.JobResult, terminateSub chan bool) {
 			channelDumpContext.pagesToReceive.Done()
 			// Report back error
 			if err != nil {
-				atomic.StoreInt32(&channelDumpContext.errorOccurred, 1)
+				atomic.StoreInt32(&channelDumpContext.eventOccured, 1)
 				log.Printf("Error at page %d: %v", page, err)
+			} else if numURLs == 0 {
+				// Got all pages
+				atomic.StoreInt32(&channelDumpContext.eventOccured, 2)
 			} else {
 				totalURLs += numURLs
 			}
@@ -155,7 +157,7 @@ func channelDumpResult(res *net.JobResult) (page uint, numURLs int, err error) {
 	channelURLs, err = api.Main.ParseChannelVideoURLs(res.Res)
 	if err != nil { return }
 	numURLs = len(channelURLs)
-	if numURLs == 0 { return page, 0, errors.New("returned no videos") }
+	if numURLs == 0 { return page, 0, nil } // End of data
 
 	// Print results
 	log.Printf("Received page %d: %d videos.", page, numURLs)

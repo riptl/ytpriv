@@ -57,7 +57,8 @@ func ParseChannelVideoURLs(res *http.Response) ([]string, error) {
 		"gridContinuation",
 		"items",
 	)
-	if itemsObj == nil { return nil, MissingData }
+	// End of data
+	if itemsObj == nil { return nil, nil }
 
 	// Items as array
 	items, err := itemsObj.Array()
