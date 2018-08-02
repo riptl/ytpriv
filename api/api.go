@@ -45,6 +45,9 @@ var ClassicAPI = API{
 }
 
 var JsonAPI = API{
+	GrabVideo: apijson.GrabVideo,
+	ParseVideo: apijson.ParseVideo,
+
 	GrabChannelPage: apijson.GrabChannelPage,
 	ParseChannelVideoURLs: apijson.ParseChannelVideoURLs,
 }

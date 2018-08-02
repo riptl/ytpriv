@@ -18,8 +18,9 @@ var videoDetailCmd = cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		videoID := args[0]
 
-		videoID = api.GetVideoID(videoID)
-		if videoID == "" {
+		videoID, err := api.GetVideoID(videoID)
+		if err != nil {
+			log.Fatal(err)
 			os.Exit(1)
 		}
 
@@ -32,6 +33,7 @@ var videoDetailCmd = cobra.Command{
 		}
 
 		var v data.Video
+		v.ID = videoID
 		api.Main.ParseVideo(&v, res)
 
 		bytes, err := json.MarshalIndent(&v, "", "\t")
