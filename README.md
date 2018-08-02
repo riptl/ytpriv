@@ -16,7 +16,7 @@ If you don't have a Go toolchain, grab an executable from the Releases tab
 - _/api_: Abstract API definitions
     - _/apiclassic_: HTML API implementation (parsing using [goquery][goquery])
     - _/apijson_: JSON API implementation (parsing using [fastjson][fastjson])
-- _/net_: HTTP utilities (asnyc HTTP implementation)
+- _/net_: HTTP utilities (async HTTP implementation)
 - _/cmd_: Cobra CLI
 - _/util_: I don't have a better place for these
 
