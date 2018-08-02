@@ -11,7 +11,6 @@ import (
 
 const Version = "v0.1 -- dev"
 
-var printVersion bool
 var forceAPI string
 var concurrentRequests uint
 var debugHttpFile string
@@ -21,12 +20,6 @@ var Root = cobra.Command{
 	Short: "YT-Mango is a scalable video metadata archiver",
 	Long: "YT-Mango is a scalable video metadata archiving utility\n" +
 		"written by terorie for https://the-eye.eu/",
-	PreRun: func(cmd *cobra.Command, args []string) {
-		if printVersion {
-			fmt.Println(Version)
-			os.Exit(0)
-		}
-	},
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		net.MaxWorkers = uint32(concurrentRequests)
 
@@ -58,7 +51,7 @@ var Root = cobra.Command{
 }
 
 func init() {
-	Root.Flags().BoolVar(&printVersion, "version", false,
+	Root.Flags().Bool("version", false,
 		fmt.Sprintf("Print the version (" + Version +") and exit"))
 
 	pf := Root.PersistentFlags()

@@ -8,9 +8,15 @@ import (
 	"os"
 	"log"
 	"github.com/terorie/yt-mango/cmd"
+	"github.com/terorie/yt-mango/version"
 )
 
 func main() {
+	if len(os.Args) == 2 && os.Args[1] == "--version" {
+		fmt.Println(version.Get())
+		os.Exit(0)
+	}
+
 	// All diagnostics (logging) should go to stderr
 	log.SetOutput(os.Stderr)
 
