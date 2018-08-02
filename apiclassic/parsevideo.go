@@ -108,11 +108,14 @@ func (p *parseVideoInfo) parseMetas() (err error) {
 			case "og:image":
 				p.v.Thumbnail = content
 			}
+		case metaName:
+			switch tag.name {
+			}
 		case metaItemProp:
 			switch tag.name {
 			case "datePublished":
 				if val, err := time.Parse("2006-01-02", content);
-					err == nil { p.v.UploadDate = val }
+					err == nil { p.v.UploadDate = data.SimpleTime(val) }
 			case "genre":
 				p.v.Genre = content
 			case "channelId":

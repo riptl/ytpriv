@@ -9,7 +9,7 @@ type Video struct {
 	Uploader string `json:"uploader"`
 	UploaderID string `json:"uploader_id"`
 	UploaderURL string `json:"uploader_url"`
-	UploadDate time.Time `json:"upload_date"`
+	UploadDate SimpleTime `json:"upload_date"`
 	Thumbnail string `json:"thumbnail"`
 	URL string `json:"url"`
 	License string `json:"license,omitempty"`
@@ -27,4 +27,10 @@ type Video struct {
 type Subtitle struct {
 	URL string
 	Extension string
+}
+
+type SimpleTime time.Time
+
+func (t SimpleTime) MarshalJSON() ([]byte, error) {
+	return []byte(time.Time(t).Format("\"2006-01-02\"")), nil
 }

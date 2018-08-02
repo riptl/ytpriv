@@ -47,5 +47,4 @@ func GrabChannel(channelID string) *http.Request {
 
 func setHeaders(h *http.Header) {
 	h.Add("Host", "www.youtube.com")
-	h.Add("User-Agent", "yt-mango/0.1")
 }
