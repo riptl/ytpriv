@@ -39,10 +39,10 @@ var channelDumpCmd = cobra.Command{
 	Short: "Get all public video URLs from channel",
 	Long: "Write all videos URLs of a channel to a file",
 	Args: cobra.RangeArgs(1, 2),
-	Run: doChannelDump,
+	Run: cmdFunc(doChannelDump),
 }
 
-func doChannelDump(_ *cobra.Command, args []string) {
+func doChannelDump(_ *cobra.Command, args []string) error {
 	if offset == 0 { offset = 1 }
 
 	printResults := false
@@ -73,10 +73,7 @@ func doChannelDump(_ *cobra.Command, args []string) {
 	if !printResults {
 		var err error
 		file, err = os.OpenFile(fileName, flags, 0640)
-		if err != nil {
-			log.Fatal(err)
-			os.Exit(1)
-		}
+		if err != nil { return err }
 		defer file.Close()
 
 		writer := bufio.NewWriter(file)
@@ -109,6 +106,8 @@ func doChannelDump(_ *cobra.Command, args []string) {
 	channelDumpContext.pagesToReceive.Wait()
 
 	terminateSub <- true
+
+	return nil
 }
 
 	// Helper goroutine that processes HTTP results.
