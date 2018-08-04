@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 	"regexp"
+	"github.com/terorie/yt-mango/util"
 )
 
 var matchThumbUrl = regexp.MustCompile("^.+/hqdefault\\.jpg")
@@ -100,7 +101,7 @@ func parseVideoDetails(v *data.Video, videoDetails *fastjson.Value) error {
 	// Get duration
 	lengthStr := string(videoDetails.GetStringBytes("lengthSeconds"))
 	length64, err := strconv.ParseUint(lengthStr, 10, 64)
-	if err != nil { v.Duration = length64 }
+	if err == nil { v.Duration = length64 }
 
 	// Get thumbnail URL
 	thumbUrl := string(videoDetails.GetStringBytes("thumbnail", "thumbnails", "0", "url"))
@@ -127,11 +128,32 @@ func parseVideoInfo(v *data.Video, videoInfo []*fastjson.Value) error {
 		}
 	}
 
+	// Get like/dislike count
+	likeRatioStr := string(primary.GetStringBytes("sentimentBar", "sentimentBarRenderer", "tooltip"))
+	likeRatioParts := strings.Split(likeRatioStr, " / ")
+	if len(likeRatioParts) == 2 {
+		likesStr := likeRatioParts[0]
+		dislikesStr := likeRatioParts[1]
+		v.Likes, _ = util.ExtractNumber(likesStr)
+		v.Dislikes, _ = util.ExtractNumber(dislikesStr)
+	}
+
 	// Get upload date
 	dateText := string(secondary.GetStringBytes("dateText", "simpleText"))
 	dateText = strings.TrimPrefix(dateText, "Published on ")
 	date, err := time.Parse("Jan _2, 2006", dateText)
 	if err == nil { v.UploadDate = data.SimpleTime(date) }
+
+	// Get category
+	// Find category row
+	metaRows := secondary.GetArray("metadataRowContainer", "metadataRowContainerRenderer", "rows")
+	for _, obj := range metaRows {
+		row := obj.Get("metadataRowRenderer")
+		if string(row.GetStringBytes("title", "simpleText")) == "Category" {
+			v.Genre = string(row.GetStringBytes("contents", "0", "runs", "0", "text"))
+			break
+		}
+	}
 
 	return nil
 }
