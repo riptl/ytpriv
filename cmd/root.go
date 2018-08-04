@@ -3,10 +3,10 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"github.com/spf13/cobra"
-	"github.com/terorie/yt-mango/net"
-	"github.com/terorie/yt-mango/api"
 	"bufio"
+	"github.com/spf13/cobra"
+	"github.com/terorie/yt-mango/api"
+	"github.com/terorie/yt-mango/net"
 )
 
 const Version = "v0.1 -- dev"
@@ -20,34 +20,7 @@ var Root = cobra.Command{
 	Short: "YT-Mango is a scalable video metadata archiver",
 	Long: "YT-Mango is a scalable video metadata archiving utility\n" +
 		"written by terorie for https://the-eye.eu/",
-	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		net.MaxWorkers = uint32(concurrentRequests)
-
-		if debugHttpFile != "" {
-			debugFile, err := os.OpenFile(debugHttpFile,
-				os.O_WRONLY | os.O_CREATE | os.O_APPEND,
-				0644)
-			if err != nil {
-				fmt.Fprintln(os.Stderr, "Could not open HTTP debug file:", err)
-				os.Exit(1)
-			}
-
-			debugWriter := bufio.NewWriter(debugFile)
-
-			// Force all HTTP requests through debug code
-			net.Client.Transport = net.DebugTransport{ debugFile, debugWriter }
-		}
-
-		switch forceAPI {
-		case "": api.Main = &api.TempAPI
-		case "classic": api.Main = &api.ClassicAPI
-		case "json": api.Main = &api.JsonAPI
-		default:
-			fmt.Fprintln(os.Stderr, "Invalid API specified.\n" +
-				"Valid options are: \"classic\" and \"json\"")
-			os.Exit(1)
-		}
-	},
+	PersistentPreRun: rootPreRun,
 }
 
 func init() {
@@ -67,4 +40,34 @@ func init() {
 	Root.AddCommand(&Channel)
 	Root.AddCommand(&Video)
 	Root.AddCommand(&DebugFile)
+	//Root.AddCommand(&Worker)
+}
+
+func rootPreRun(_ *cobra.Command, _ []string) {
+	net.MaxWorkers = uint32(concurrentRequests)
+
+	if debugHttpFile != "" {
+		debugFile, err := os.OpenFile(debugHttpFile,
+			os.O_WRONLY | os.O_CREATE | os.O_APPEND,
+			0644)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "Could not open HTTP debug file:", err)
+			os.Exit(1)
+		}
+
+		debugWriter := bufio.NewWriter(debugFile)
+
+		// Force all HTTP requests through debug code
+		net.Client.Transport = net.DebugTransport{ debugFile, debugWriter }
+	}
+
+	switch forceAPI {
+	case "": api.Main = &api.TempAPI
+	case "classic": api.Main = &api.ClassicAPI
+	case "json": api.Main = &api.JsonAPI
+	default:
+		fmt.Fprintln(os.Stderr, "Invalid API specified.\n" +
+			"Valid options are: \"classic\" and \"json\"")
+		os.Exit(1)
+	}
 }

@@ -27,6 +27,7 @@ type Video struct {
 	Visibility VisibilitySetting `json:"visibility"`
 	NoComments bool `json:"no_comments"`
 	NoRatings bool `json:"no_ratings"`
+	NoEmbed bool `json:"no_embed"`
 	ProductPlacement bool `json:"product_placement"`
 	WatchStatistics bool `json:"watch_statistics"`
 
