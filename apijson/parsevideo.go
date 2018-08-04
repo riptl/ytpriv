@@ -12,7 +12,7 @@ import (
 	"regexp"
 )
 
-var matchThumbUrl = regexp.MustCompile("^.+/hqdefault.jpg")
+var matchThumbUrl = regexp.MustCompile("^.+/hqdefault\\.jpg")
 
 var missingData = errors.New("missing data")
 var unexpectedType = errors.New("unexpected type")
