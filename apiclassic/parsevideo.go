@@ -21,15 +21,15 @@ const channelNameSelector = ".yt-uix-sessionlink"
 
 var playerConfigErr = errors.New("failed to parse player config")
 
-func ParseVideo(v *data.Video, res *http.Response) (err error) {
-	if res.StatusCode != 200 { return errors.New("HTTP failure") }
+func ParseVideo(v *data.Video, res *http.Response) (_ []string, err error) {
+	if res.StatusCode != 200 { return nil, errors.New("HTTP failure") }
 
 	defer res.Body.Close()
 	doc, err := goquery.NewDocumentFromReader(res.Body)
 	if err != nil { return }
 
 	p := parseVideoInfo{v, doc}
-	return p.parse()
+	return nil, p.parse()
 }
 
 type parseVideoInfo struct {

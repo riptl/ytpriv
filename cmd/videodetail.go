@@ -1,10 +1,8 @@
 package cmd
 
 import (
-	"os"
 	"encoding/json"
 	"fmt"
-	"log"
 	"github.com/spf13/cobra"
 	"github.com/terorie/yt-mango/api"
 	"github.com/terorie/yt-mango/net"
@@ -15,31 +13,38 @@ var videoDetailCmd = cobra.Command{
 	Use: "detail <video ID> [file]",
 	Short: "Get details about a video",
 	Args: cobra.ExactArgs(1),
-	Run: doVideoDetail,
+	Run: cmdFunc(doVideoDetail),
 }
 
-func doVideoDetail(_ *cobra.Command, args []string) {
+func doVideoDetail(_ *cobra.Command, args []string) error {
 	videoID := args[0]
 
 	videoID, err := api.GetVideoID(videoID)
-	if err != nil {
-		log.Fatal(err)
-		os.Exit(1)
-	}
+	if err != nil { return err }
 
 	videoReq := api.Main.GrabVideo(videoID)
 
 	res, err := net.Client.Do(videoReq)
-	if err != nil {
-		log.Fatal(err)
-		os.Exit(1)
-	}
+	if err != nil { return err }
 
 	var v data.Video
 	v.ID = videoID
-	api.Main.ParseVideo(&v, res)
+	related, err := api.Main.ParseVideo(&v, res)
+	if err != nil { return err }
 
-	bytes, err := json.MarshalIndent(&v, "", "\t")
-	if err != nil { panic(err) }
-	fmt.Println(string(bytes))
+	bytesMain, err := json.MarshalIndent(&v, "", "\t")
+	if err != nil { return err }
+
+	fmt.Println(string(bytesMain))
+	fmt.Println()
+
+	if len(related) > 0 {
+		bytesRelated, err := json.Marshal(related)
+		if err != nil { return err }
+
+		fmt.Println("Related URLs:")
+		fmt.Println(string(bytesRelated))
+	}
+
+	return nil
 }

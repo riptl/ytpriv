@@ -8,8 +8,11 @@ import (
 )
 
 type API struct {
+	// Build a request to grab the video page
 	GrabVideo func(videoID string) *http.Request
-	ParseVideo func(*data.Video, *http.Response) error
+	// Parse a response with a video page into a video struct
+	// and return all related video IDs or an error
+	ParseVideo func(*data.Video, *http.Response) ([]string, error)
 
 	GrabVideoSubtitleList func(videoID string) *http.Request
 	ParseVideoSubtitleList func(*data.Video, *http.Response) error

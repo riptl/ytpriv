@@ -18,20 +18,20 @@ var matchThumbUrl = regexp.MustCompile("^.+/hqdefault\\.jpg")
 var missingData = errors.New("missing data")
 var unexpectedType = errors.New("unexpected type")
 
-func ParseVideo(v *data.Video, res *http.Response) error {
+func ParseVideo(v *data.Video, res *http.Response) ([]string, error) {
 	defer res.Body.Close()
 
 	// Download response
 	body, err := ioutil.ReadAll(res.Body)
-	if err != nil { return err }
+	if err != nil { return nil, err }
 
 	// Parse JSON
 	var p fastjson.Parser
 	root, err := p.ParseBytes(body)
-	if err != nil { return err }
+	if err != nil { return nil, err }
 
 	rootArray := root.GetArray()
-	if rootArray == nil { return unexpectedType }
+	if rootArray == nil { return nil, unexpectedType }
 
 	// Get interesting objects
 	var pageResponse *fastjson.Value
@@ -46,8 +46,8 @@ func ParseVideo(v *data.Video, res *http.Response) error {
 			playerArgs = sub.Get("player", "args")
 		}
 	}
-	if playerResponse == nil { return errors.New("no video details") }
-	if playerArgs == nil { return errors.New("no player args") }
+	if playerResponse == nil { return nil, errors.New("no video details") }
+	if playerArgs == nil { return nil, errors.New("no player args") }
 
 	// Playable in embed?
 	playableInEmbedValue := playerResponse.Get("playabilityStatus", "playableInEmbed")
@@ -57,17 +57,22 @@ func ParseVideo(v *data.Video, res *http.Response) error {
 	}
 
 	if err := parseVideoDetails(v, playerResponse.Get("videoDetails"));
-		err != nil { return err }
+		err != nil { return nil, err }
 
-	watchNextContents := pageResponse.GetArray(
-		"contents", "twoColumnWatchNextResults", "results", "results", "contents")
+	watchNextResults := pageResponse.Get("contents", "twoColumnWatchNextResults")
+
+	// Parse video infos
+	watchNextContents := watchNextResults.GetArray("results", "results", "contents")
 	if err := parseVideoInfo(v, watchNextContents);
-		err != nil { return err }
+		err != nil { return nil, err }
+
+	// Get related vids
+	related := parseVideoRelated(watchNextResults)
 
 	// Get URL
 	v.URL = string(playerArgs.GetStringBytes("loaderUrl"))
 
-	return nil
+	return related, nil
 }
 
 func parseVideoDetails(v *data.Video, videoDetails *fastjson.Value) error {
@@ -158,3 +163,14 @@ func parseVideoInfo(v *data.Video, videoInfo []*fastjson.Value) error {
 	return nil
 }
 
+func parseVideoRelated(watchNextResults *fastjson.Value) []string {
+	var related []string
+	results := watchNextResults.GetArray("secondaryResults", "secondaryResults", "results")
+	for _, obj := range results {
+		videoId := string(obj.GetStringBytes("compactVideoRenderer", "videoId"))
+		if videoId != "" {
+			related = append(related, videoId)
+		}
+	}
+	return related
+}
