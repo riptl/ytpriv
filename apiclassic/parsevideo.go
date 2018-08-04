@@ -10,6 +10,7 @@ import (
 	"github.com/valyala/fastjson"
 	"strings"
 	"net/http"
+	"github.com/terorie/yt-mango/util"
 )
 
 const likeBtnSelector = ".like-button-renderer-like-button-unclicked"
@@ -61,9 +62,9 @@ func (p *parseVideoInfo) parseLikeDislike() error {
 	}
 
 	var err error
-	p.v.Likes, err = extractNumber(likeText)
+	p.v.Likes, err = util.ExtractNumber(likeText)
 	if err != nil { return err }
-	p.v.Dislikes, err = extractNumber(dislikeText)
+	p.v.Dislikes, err = util.ExtractNumber(dislikeText)
 	if err != nil { return err }
 
 	return nil
@@ -71,7 +72,7 @@ func (p *parseVideoInfo) parseLikeDislike() error {
 
 func (p *parseVideoInfo) parseViewCount() error {
 	viewCountText := p.doc.Find(viewCountSelector).First().Text()
-	viewCount, err := extractNumber(viewCountText)
+	viewCount, err := util.ExtractNumber(viewCountText)
 	if err != nil { return err }
 	p.v.Views = viewCount
 	return nil
@@ -121,7 +122,7 @@ func (p *parseVideoInfo) parseMetas() (err error) {
 			case "channelId":
 				p.v.UploaderID = content
 			case "duration":
-				if val, err := parseDuration(content); err == nil {
+				if val, err := util.ParseDuration(content); err == nil {
 					p.v.Duration = val
 				} else {
 					return false
