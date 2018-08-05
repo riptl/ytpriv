@@ -56,7 +56,7 @@ func ConnectMongo() error {
 
 func DisconnectMongo() {
 	if err := dbClient.Disconnect(context.Background()); err != nil {
-		log.Fatalf("Error while disconnecting Mongo: %s", err.Error())
+		log.Printf("Error while disconnecting Mongo: %s", err.Error())
 	}
 }
 

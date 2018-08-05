@@ -30,7 +30,7 @@ func doChannelDetail(_ *cobra.Command, args []string) {
 
 	res, err := net.Client.Do(channelReq)
 	if err != nil {
-		log.Fatal(err)
+		log.Print(err)
 		os.Exit(1)
 	}
 

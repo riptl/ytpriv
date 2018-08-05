@@ -55,7 +55,7 @@ func doWork(_ *cobra.Command, args []string) error {
 		req := api.Main.GrabVideo(videoId)
 		res, err := net.Client.Do(req)
 		if err != nil {
-			log.Fatalf("Failed to download video \"%s\": %s", videoId, err.Error())
+			log.Printf("Failed to download video \"%s\": %s", videoId, err.Error())
 			return fatalErr
 		}
 
@@ -63,27 +63,27 @@ func doWork(_ *cobra.Command, args []string) error {
 		v.ID = videoId
 		next, err := api.Main.ParseVideo(&v, res)
 		if err != nil {
-			log.Fatalf("Parsing video \"%s\" failed: %s", videoId, err.Error())
+			log.Printf("Parsing video \"%s\" failed: %s", videoId, err.Error())
 			return fatalErr
 		}
 
 		err = store.SubmitCrawl(&v, time.Now())
 		if err != nil {
-			log.Fatalf("Uploading crawl of video \"%s\" failed: %s", videoId, err.Error())
+			log.Printf("Uploading crawl of video \"%s\" failed: %s", videoId, err.Error())
 			return fatalErr
 		}
 
 		if len(next) > 0 {
 			err = store.SubmitVideoIDs(next)
 			if err != nil {
-				log.Fatalf("Pushing related video IDs of video \"%s\" failed: %s", videoId, err.Error())
+				log.Printf("Pushing related video IDs of video \"%s\" failed: %s", videoId, err.Error())
 				return fatalErr
 			}
 		}
 
 		err = store.DoneVideoID(videoId)
 		if err != nil {
-			log.Fatalf("Marking video \"%s\" as done failed: %s", videoId, err.Error())
+			log.Printf("Marking video \"%s\" as done failed: %s", videoId, err.Error())
 			return fatalErr
 		}
 

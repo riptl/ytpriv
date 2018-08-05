@@ -57,7 +57,7 @@ func ConnectQueue() error {
 
 func DisconnectQueue() {
 	if err := queue.Close(); err != nil {
-		log.Fatalf("Error while disconnecting from Queue: %s", err.Error())
+		log.Printf("Error while disconnecting from Queue: %s", err.Error())
 	}
 }
 

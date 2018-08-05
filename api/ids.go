@@ -20,7 +20,7 @@ func GetChannelID(chanURL string) string {
 		// Check if youtube.com domain
 		_url, err := url.Parse(chanURL)
 		if err != nil || (_url.Host != "www.youtube.com" && _url.Host != "youtube.com") {
-			log.Fatal("Not a channel ID:", chanURL)
+			log.Print("Not a channel ID:", chanURL)
 			return ""
 		}
 
