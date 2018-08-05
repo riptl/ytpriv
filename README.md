@@ -21,11 +21,14 @@ If you don't have a Go toolchain, grab an executable from the Releases tab
 - _/util_: I don't have a better place for these
 
 - _/pretty_: (not yet used) Terminal color utilities
-- _/controller_: (not yet implemented) worker management
-    - _/db_: (not yet implemented) MongoDB connection
-    - _???_: (not yet implemented) Redis queue
+- _/worker_: (not yet implemented) worker mode
+- _/store_: (not fully implemented) Queue and database
+    - `/store/queue.go`: Redis job queue (using [go-redis][go-redis])
+    - `/store/db.go`: Mongo main DB (using [mgo][mgo])
 
  [youtube-ma]: https://github.com/CorentinB/youtube-ma
  [goquery]: https://github.com/PuerkitoBio/goquery
  [fastjson]: https://github.com/valyala/fastjson
  [cobra]: https://github.com/spf13/cobra
+ [go-redis]: https://github.com/go-redis/redis
+ [mgo]: https://github.com/go-redis/redis
