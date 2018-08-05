@@ -76,9 +76,6 @@ func parseLink(c *html.Node, dest *bytes.Buffer) error {
 				dest.WriteString(fmt.Sprintf("[%s](%s)\n", text, link))
 				*/
 				dest.WriteString(text)
-
-			default:
-				return errors.New("unknown link")
 			}
 			break
 		}

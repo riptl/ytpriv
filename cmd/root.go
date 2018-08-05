@@ -40,7 +40,7 @@ func init() {
 	Root.AddCommand(&Channel)
 	Root.AddCommand(&Video)
 	Root.AddCommand(&DebugFile)
-	//Root.AddCommand(&Worker)
+	Root.AddCommand(&Worker)
 }
 
 func rootPreRun(_ *cobra.Command, _ []string) {

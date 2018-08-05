@@ -4,6 +4,9 @@ import (
 	"log"
 	"time"
 	"github.com/go-redis/redis"
+	"github.com/spf13/viper"
+	"github.com/terorie/yt-mango/viperstruct"
+	"errors"
 )
 
 // Sorted set with VID as key and
@@ -19,37 +22,76 @@ const videoWaitQueue = "VIDEO_WAIT"
 const videoWorkQueue = "VIDEO_WORK"
 
 // Timeout for blocking functions
-const timeout = 30 * time.Second
+const queueTimeout = 30 * time.Second
 
-var client redis.Client
+var queue *redis.Client
 
 // Redis queue
 
+func ConnectQueue() error {
+	// Default config vars
+	viper.SetDefault("queue.network", "tcp")
+	viper.SetDefault("queue.host", "localhost:6379")
+	viper.SetDefault("queue.db", 0)
+
+	var queueConf struct{
+		Network string `viper:"queue.network"`
+		Host string `viper:"queue.host"`
+		Pass string `viper:"queue.pass,optional"`
+		DB int `viper:"queue.db"`
+	}
+
+	if err := viperstruct.ReadConfig(&queueConf);
+		err != nil { return err }
+
+	queue = redis.NewClient(&redis.Options{
+		Network: queueConf.Network,
+		Addr: queueConf.Host,
+		Password: queueConf.Pass,
+		DB: queueConf.DB,
+	})
+	if queue == nil { return errors.New("could not connect to Redis") }
+
+	return nil
+}
+
+func DisconnectQueue() {
+	if err := queue.Close(); err != nil {
+		log.Fatalf("Error while disconnecting from Queue: %s", err.Error())
+	}
+}
+
 // Adds video IDs to VIDEO_SET and to
 // VIDEO_WAIT if they are newly found
-func SubmitVideos(ids []string) error {
+func SubmitVideoIDs(ids []string) error {
 	for _, id := range ids {
 		// Check against the sorted set
-		numAdded, err := client.ZAdd(videoSet, redis.Z{float64(time.Now().Unix()), id}).Result()
+		numAdded, err := queue.ZAdd(videoSet, redis.Z{float64(time.Now().Unix()), id}).Result()
 		if err != nil { return err }
 
 		// New ID, add to wait queue
 		if numAdded == 1 {
-			log.Printf("Added new video ID \"%s\" to wait queue.")
-			if err := client.LPush(videoWaitQueue, id).Err();
+			log.Printf(" + Added new video ID \"%s\" to wait queue.", id)
+			if err := queue.LPush(videoWaitQueue, id).Err();
 				err != nil { return err }
 		}
 	}
 	return nil
 }
 
-// Moves a video from VIDEO_WAIT to VIDEO_SET
+// Moves a video from VIDEO_WAIT to VIDEO_WORK
 // Possible returns:
 //  - "<video-id>", nil: New video ID assigned to this worker
 //  - "", nil: No video ID in queue
 //  - "", <error>: Error occurred
-func GetScheduledVideo() (string, error) {
-	return client.BRPopLPush(videoWaitQueue, videoWorkQueue, timeout).Result()
+func GetScheduledVideoID() (string, error) {
+	return queue.RPopLPush(videoWaitQueue, videoWorkQueue).Result()
+}
+
+// Removes a video from VIDEO_WORK
+// to show that the job is done.
+func DoneVideoID(videoID string) error {
+	return queue.LRem(videoWorkQueue, -1, videoID).Err()
 }
 
 // TODO Recrawl oldest video IDs with "ZPOPMIN VIDEO_SET" & ZADD VIDEO_SET" & "LPUSH VIDEO_WAIT"
