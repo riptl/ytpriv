@@ -4,7 +4,7 @@
 # Configuration of the Mongo database
 mongo:
   # Address of the Mongo server to connect to
-  host: "mongo://localhost:27107"
+  host: "mongodb://localhost:27107"
 
   # Credentials
   # (leave blank if no login is needed)
