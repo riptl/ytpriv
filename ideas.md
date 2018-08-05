@@ -60,18 +60,17 @@
     * Implement queue priority?
 * Maintainer bots push IDs if they likely need rescans
 * States of queued items
-    1. _Queued:_ Processing required
-       (no worker bot picked them up yet)
-    2. _Assigned:_ Worker claimed ID and processes it.
+    1. _Found:_ Video ID is known
+    2. _Queued:_ Processing required
+       (no worker bot picked them up yet or
+        last crawl was too long ago)
+    3. _Assigned:_ Worker claimed ID and processes it.
        If the worker doesn't mark the ID as done in time
        it gets tagged back as _Queued_ again
        (should be hidden from other workers)
-    3. _Done:_ Worker submitted crawl to the database
-       (can be deleted from the queue)
+       If the worker finishes the job, it gets placed into _Found_
 * Single point of failure
     * Potentially needs ton of RAM
         * 800 M IDs at 100 bytes per entry = 80 GB
     * Shuts down entire crawl system on failure
     * Persistence: A crash can use all discovered IDs
-* Alternative implementations
-    * SQLite in-memory?
