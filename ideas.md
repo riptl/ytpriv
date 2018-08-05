@@ -69,8 +69,3 @@
        it gets tagged back as _Queued_ again
        (should be hidden from other workers)
        If the worker finishes the job, it gets placed into _Found_
-* Single point of failure
-    * Potentially needs ton of RAM
-        * 800 M IDs at 100 bytes per entry = 80 GB
-    * Shuts down entire crawl system on failure
-    * Persistence: A crash can use all discovered IDs
