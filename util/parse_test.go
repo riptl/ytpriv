@@ -24,6 +24,22 @@ func TestParseDuration(t *testing.T) {
 			t.Error(tests[i], err)
 		}
 	}
+
+	fails := []string{
+		"PS23M23S",
+		"PT30",
+		"PT30S",
+		"PTXDM30S",
+		"PT23MXDS",
+		"PTMS",
+	}
+
+	for _, fail := range fails {
+		if n, err := ParseDuration(fail); err == nil {
+			t.Errorf("Didn't return an an error.\n" +
+				"(%s => %d)", fail, n)
+		}
+	}
 }
 
 func TestExtractNumber(t *testing.T) {
