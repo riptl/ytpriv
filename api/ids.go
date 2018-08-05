@@ -3,9 +3,9 @@ package api
 import (
 	"regexp"
 	"strings"
-	"log"
 	"net/url"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 )
 
 // FIXME: API package should be abstract, no utility code in here
@@ -20,14 +20,14 @@ func GetChannelID(chanURL string) string {
 		// Check if youtube.com domain
 		_url, err := url.Parse(chanURL)
 		if err != nil || (_url.Host != "www.youtube.com" && _url.Host != "youtube.com") {
-			log.Print("Not a channel ID:", chanURL)
+			log.Warn("Not a channel ID:", chanURL)
 			return ""
 		}
 
 		// Check if old /user/ URL
 		if strings.HasPrefix(_url.Path, "/user/") {
 			// TODO Implement extraction of channel ID
-			log.Print("New /channel/ link is required!\n" +
+			log.Warn("New /channel/ link is required!\n" +
 				"The old /user/ links do not work:", chanURL)
 			return ""
 		}
@@ -36,7 +36,7 @@ func GetChannelID(chanURL string) string {
 		channelID := strings.TrimPrefix(_url.Path, "/channel/")
 		if len(channelID) == len(_url.Path) {
 			// No such prefix to be removed
-			log.Print("Not a channel ID:", channelID)
+			log.Warn("Not a channel ID:", channelID)
 			return ""
 		}
 

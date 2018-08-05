@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/terorie/yt-mango/api"
 	"github.com/terorie/yt-mango/net"
+	"github.com/sirupsen/logrus"
 )
 
 const Version = "v0.1 -- dev"
@@ -14,6 +15,7 @@ const Version = "v0.1 -- dev"
 var forceAPI string
 var concurrentRequests uint
 var debugHttpFile string
+var logLevel string
 
 var Root = cobra.Command{
 	Use:   "yt-mango",
@@ -36,6 +38,9 @@ func init() {
 	pf.StringVar(&debugHttpFile, "debug-file", "",
 		"Log all HTTP actions to a JSON-like file\n" +
 		"(one request/response pair per line)")
+	pf.StringVarP(&logLevel, "log-level", "l", "",
+		"Log level. Valid options are:\n" +
+		"{debug, info, warn, error, fatal, panic}")
 
 	Root.AddCommand(&Channel)
 	Root.AddCommand(&Video)
@@ -69,5 +74,14 @@ func rootPreRun(_ *cobra.Command, _ []string) {
 		fmt.Fprintln(os.Stderr, "Invalid API specified.\n" +
 			"Valid options are: \"classic\" and \"json\"")
 		os.Exit(1)
+	}
+
+	if logLevel != "" {
+		lvl, err := logrus.ParseLevel(logLevel)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err.Error())
+			os.Exit(1)
+		}
+		logrus.SetLevel(lvl)
 	}
 }

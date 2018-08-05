@@ -4,7 +4,7 @@ import (
 	"time"
 	"context"
 	"errors"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"github.com/mongodb/mongo-go-driver/mongo/clientopt"
 	"github.com/mongodb/mongo-go-driver/mongo"
@@ -56,7 +56,7 @@ func ConnectMongo() error {
 
 func DisconnectMongo() {
 	if err := dbClient.Disconnect(context.Background()); err != nil {
-		log.Printf("Error while disconnecting Mongo: %s", err.Error())
+		log.Errorf("Error while disconnecting Mongo: %s", err.Error())
 	}
 }
 

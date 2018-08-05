@@ -2,8 +2,8 @@ package cmd
 
 import (
 	"os"
-	"log"
 	"time"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/terorie/yt-mango/store"
@@ -34,18 +34,18 @@ func doWork(_ *cobra.Command, args []string) error {
 	if err := store.ConnectQueue();
 		err != nil { return err }
 	defer store.DisconnectQueue()
-	log.Print("Connected to Redis.")
+	log.Info("Connected to Redis.")
 
 	if err := store.ConnectMongo();
 		err != nil { return err }
 	defer store.DisconnectMongo()
-	log.Print("Connected to Mongo.")
+	log.Info("Connected to Mongo.")
 
 	for {
 		videoId, err := store.GetScheduledVideoID()
 		if err != nil && err.Error() != "redis: nil" { return err }
 		if videoId == "" {
-			log.Print("Queue is empty, idling for 10 seconds.")
+			log.Info("Queue is empty, idling for 10 seconds.")
 			time.Sleep(10 * time.Second)
 			continue
 		}
@@ -55,7 +55,7 @@ func doWork(_ *cobra.Command, args []string) error {
 		req := api.Main.GrabVideo(videoId)
 		res, err := net.Client.Do(req)
 		if err != nil {
-			log.Printf("Failed to download video \"%s\": %s", videoId, err.Error())
+			log.Errorf("Failed to download video \"%s\": %s", videoId, err.Error())
 			return fatalErr
 		}
 
@@ -63,31 +63,31 @@ func doWork(_ *cobra.Command, args []string) error {
 		v.ID = videoId
 		next, err := api.Main.ParseVideo(&v, res)
 		if err != nil {
-			log.Printf("Parsing video \"%s\" failed: %s", videoId, err.Error())
+			log.Errorf("Parsing video \"%s\" failed: %s", videoId, err.Error())
 			return fatalErr
 		}
 
 		err = store.SubmitCrawl(&v, time.Now())
 		if err != nil {
-			log.Printf("Uploading crawl of video \"%s\" failed: %s", videoId, err.Error())
+			log.Errorf("Uploading crawl of video \"%s\" failed: %s", videoId, err.Error())
 			return fatalErr
 		}
 
 		if len(next) > 0 {
 			err = store.SubmitVideoIDs(next)
 			if err != nil {
-				log.Printf("Pushing related video IDs of video \"%s\" failed: %s", videoId, err.Error())
+				log.Errorf("Pushing related video IDs of video \"%s\" failed: %s", videoId, err.Error())
 				return fatalErr
 			}
 		}
 
 		err = store.DoneVideoID(videoId)
 		if err != nil {
-			log.Printf("Marking video \"%s\" as done failed: %s", videoId, err.Error())
+			log.Errorf("Marking video \"%s\" as done failed: %s", videoId, err.Error())
 			return fatalErr
 		}
 
-		log.Printf("Visited %s.", videoId)
+		log.Infof("Visited %s.", videoId)
 	}
 
 	return nil
@@ -106,8 +106,8 @@ func readConfig(overrideFile string) error {
 		err := viper.ReadInConfig()
 		switch err.(type) {
 		case viper.ConfigFileNotFoundError:
-			log.Printf("WARNING! NO LOG FILE FOUND: %s", err)
-			log.Print("Using default values …")
+			log.Warnf("WARNING! NO LOG FILE FOUND: %s\n" +
+				"Using default values …", err)
 			return nil
 		default:
 			return err

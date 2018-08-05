@@ -1,7 +1,7 @@
 package store
 
 import (
-	"log"
+	log "github.com/sirupsen/logrus"
 	"time"
 	"github.com/go-redis/redis"
 	"github.com/spf13/viper"
@@ -57,7 +57,7 @@ func ConnectQueue() error {
 
 func DisconnectQueue() {
 	if err := queue.Close(); err != nil {
-		log.Printf("Error while disconnecting from Queue: %s", err.Error())
+		log.Errorf("Error while disconnecting from Queue: %s", err.Error())
 	}
 }
 
@@ -71,7 +71,7 @@ func SubmitVideoIDs(ids []string) error {
 
 		// New ID, add to wait queue
 		if numAdded == 1 {
-			log.Printf(" + Added new video ID \"%s\" to wait queue.", id)
+			log.Debugf(" + Added new video ID \"%s\" to wait queue.", id)
 			if err := queue.LPush(videoWaitQueue, id).Err();
 				err != nil { return err }
 		}

@@ -5,7 +5,7 @@ import (
 	"os"
 	"time"
 	"bufio"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"github.com/terorie/yt-mango/api"
 	"fmt"
 	"github.com/terorie/yt-mango/net"
@@ -58,7 +58,7 @@ func doChannelDump(_ *cobra.Command, args []string) error {
 	channelID = api.GetChannelID(channelID)
 	if channelID == "" { os.Exit(1) }
 
-	log.Printf("Starting work on channel ID \"%s\".", channelID)
+	log.Infof("Starting work on channel ID \"%s\".", channelID)
 	channelDumpContext.startTime = time.Now()
 
 	var flags int
@@ -122,7 +122,7 @@ func channelDumpResults(results chan net.JobResult, terminateSub chan bool) {
 		select {
 		case <-terminateSub:
 			duration := time.Since(channelDumpContext.startTime)
-			log.Printf("Got %d URLs in %s.", totalURLs, duration.String())
+			log.Infof("Got %d URLs in %s.", totalURLs, duration.String())
 			os.Exit(0)
 			return
 		case res := <-results:
@@ -132,7 +132,7 @@ func channelDumpResults(results chan net.JobResult, terminateSub chan bool) {
 			// Report back error
 			if err != nil {
 				atomic.StoreInt32(&channelDumpContext.eventOccured, 1)
-				log.Printf("Error at page %d: %v", page, err)
+				log.Errorf("Error at page %d: %v", page, err)
 			} else if numURLs == 0 {
 				// Got all pages
 				atomic.StoreInt32(&channelDumpContext.eventOccured, 2)
@@ -159,7 +159,7 @@ func channelDumpResult(res *net.JobResult) (page uint, numURLs int, err error) {
 	if numURLs == 0 { return page, 0, nil } // End of data
 
 	// Print results
-	log.Printf("Received page %d: %d videos.", page, numURLs)
+	log.Infof("Received page %d: %d videos.", page, numURLs)
 
 	if channelDumpContext.printResults {
 		for _, _url := range channelURLs {
