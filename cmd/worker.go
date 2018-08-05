@@ -60,6 +60,7 @@ func doWork(_ *cobra.Command, args []string) error {
 		}
 
 		var v data.Video
+		v.ID = videoId
 		next, err := api.Main.ParseVideo(&v, res)
 		if err != nil {
 			log.Fatalf("Parsing video \"%s\" failed: %s", videoId, err.Error())
@@ -102,6 +103,14 @@ func readConfig(overrideFile string) error {
 	} else {
 		viper.SetConfigName("worker")
 		addConfigPaths()
-		return viper.ReadInConfig()
+		err := viper.ReadInConfig()
+		switch err.(type) {
+		case viper.ConfigFileNotFoundError:
+			log.Printf("WARNING! NO LOG FILE FOUND: %s", err)
+			log.Print("Using default values …")
+			return nil
+		default:
+			return err
+		}
 	}
 }

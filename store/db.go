@@ -10,7 +10,7 @@ import (
 	"github.com/mongodb/mongo-go-driver/mongo"
 	"github.com/terorie/yt-mango/data"
 	"github.com/terorie/yt-mango/viperstruct"
-	)
+)
 
 var dbClient *mongo.Client
 var videos *mongo.Collection
@@ -61,6 +61,6 @@ func DisconnectMongo() {
 }
 
 func SubmitCrawl(video *data.Video, crawlTime time.Time) (err error) {
-	_, err = videos.InsertOne(context.Background(), video)
+	_, err = videos.InsertOne(context.Background(), data.Crawl{video, crawlTime})
 	return
 }

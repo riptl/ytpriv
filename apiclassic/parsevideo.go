@@ -116,7 +116,7 @@ func (p *parseVideoInfo) parseMetas() (err error) {
 			switch tag.name {
 			case "datePublished":
 				if val, err := time.Parse("2006-01-02", content);
-					err == nil { p.v.UploadDate = data.SimpleTime(val) }
+					err == nil { p.v.UploadDate = val }
 			case "genre":
 				p.v.Genre = content
 			case "channelId":

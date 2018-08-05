@@ -147,7 +147,7 @@ func parseVideoInfo(v *data.Video, videoInfo []*fastjson.Value) error {
 	dateText := string(secondary.GetStringBytes("dateText", "simpleText"))
 	dateText = strings.TrimPrefix(dateText, "Published on ")
 	date, err := time.Parse("Jan _2, 2006", dateText)
-	if err == nil { v.UploadDate = data.SimpleTime(date) }
+	if err == nil { v.UploadDate = date }
 
 	// Get category
 	// Find category row
