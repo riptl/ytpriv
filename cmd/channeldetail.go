@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"encoding/json"
-	"errors"
 	"github.com/spf13/cobra"
 	"github.com/terorie/yt-mango/api"
 	"github.com/terorie/yt-mango/net"
@@ -20,8 +19,8 @@ var channelDetailCmd = cobra.Command{
 func doChannelDetail(_ *cobra.Command, args []string) error {
 	channelID := args[0]
 
-	channelID = api.GetChannelID(channelID)
-	if channelID == "" { return errors.New("failed to get channel details") }
+	channelID, err := api.GetChannelID(channelID)
+	if err != nil { return err }
 
 	channelReq := api.Main.GrabChannel(channelID)
 

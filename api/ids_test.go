@@ -1,6 +1,9 @@
 package api
 
-import "testing"
+import (
+	"testing"
+	"github.com/stretchr/testify/assert"
+)
 
 func TestGetVideoID(t *testing.T) {
 	id := "JNhpwY5Zkzk"
@@ -33,5 +36,27 @@ func TestGetVideoID(t *testing.T) {
 		if err == nil {
 			t.Errorf("Extracted \"%s\" from malformed input \"%s\"", res, test)
 		}
+	}
+}
+
+func TestGetChannelID(t *testing.T) {
+	correct := []string{
+		"https://www.youtube.com/channel/UCsLiV4WJfkTEHH0b9PmRklw",
+		"http://www.youtube.com/channel/UCsLiV4WJfkTEHH0b9PmRklw/",
+		"UCsLiV4WJfkTEHH0b9PmRklw",
+	}
+	malfored := []string{
+		"https://www.youtubee.com/channel/UCsLiV4WJfkTEHH0b9PmRklw",
+	}
+
+	for _, test := range correct {
+		id, err := GetChannelID(test)
+		assert.Nilf(t, err, "Error parsing \"%s\": %s", test, err)
+		assert.Equal(t, id, "UCsLiV4WJfkTEHH0b9PmRklw")
+	}
+
+	for _, test := range malfored {
+		_, err := GetChannelID(test)
+		assert.NotNil(t, err)
 	}
 }

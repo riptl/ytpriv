@@ -55,8 +55,8 @@ func doChannelDump(_ *cobra.Command, args []string) error {
 	}
 	channelDumpContext.printResults = printResults
 
-	channelID = api.GetChannelID(channelID)
-	if channelID == "" { os.Exit(1) }
+	channelID, err := api.GetChannelID(channelID)
+	if err != nil { return err }
 
 	log.Infof("Starting work on channel ID \"%s\".", channelID)
 	channelDumpContext.startTime = time.Now()
