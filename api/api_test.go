@@ -23,7 +23,7 @@ func testVideo1(t *testing.T, api *API) {
 	req := api.GrabVideo("uOXLKPCs54c")
 
 	res, err := net.Client.Do(req)
-	assert.Nil(t, err, err)
+	if err != nil { assert.FailNow(t, err.Error()) }
 
 	var v data.Video
 	recm, err := api.ParseVideo(&v, res)
@@ -31,4 +31,5 @@ func testVideo1(t *testing.T, api *API) {
 
 	assert.Equal(t, "tmpFmHnGe", v.Title)
 	assert.Equal(t, "People & Blogs", v.Genre)
+	assert.NotEmpty(t, v.License, "license")
 }

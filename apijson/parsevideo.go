@@ -154,9 +154,12 @@ func parseVideoInfo(v *data.Video, videoInfo []*fastjson.Value) error {
 	metaRows := secondary.GetArray("metadataRowContainer", "metadataRowContainerRenderer", "rows")
 	for _, obj := range metaRows {
 		row := obj.Get("metadataRowRenderer")
-		if string(row.GetStringBytes("title", "simpleText")) == "Category" {
+		title := string(row.GetStringBytes("title", "simpleText"))
+		switch title {
+		case "Category":
 			v.Genre = string(row.GetStringBytes("contents", "0", "runs", "0", "text"))
-			break
+		case "License":
+			v.License = string(row.GetStringBytes("contents", "0", "runs", "0", "text"))
 		}
 	}
 

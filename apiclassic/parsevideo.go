@@ -51,6 +51,7 @@ func (p *parseVideoInfo) parse() ([]string, error) {
 	var recommends []string
 	if err := p.parseRecommends(&recommends);
 		err != nil { return nil, err }
+	p.parseLicense()
 	return recommends, nil
 }
 
@@ -197,4 +198,15 @@ func (p *parseVideoInfo) parseRecommends(r *[]string) error {
 		*r = append(*r, id)
 	})
 	return nil
+}
+
+func (p *parseVideoInfo) parseLicense() {
+	p.doc.Find(".watch-meta-item").EachWithBreak(func(i int, s *goquery.Selection) bool {
+		title := strings.Trim(s.Find("h4").Text(), "\n ")
+		if title == "License" {
+			p.v.License = s.Find("a").Text()
+			return false
+		}
+		return true
+	})
 }
