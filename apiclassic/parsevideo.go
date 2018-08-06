@@ -15,9 +15,9 @@ import (
 
 const likeBtnSelector = ".like-button-renderer-like-button-unclicked"
 const dislikeBtnSelector = ".like-button-renderer-dislike-button-unclicked"
-const viewCountSelector = "div .watch-view-count"
 const userInfoSelector = "div .yt-user-info"
 const channelNameSelector = ".yt-uix-sessionlink"
+const recommendSelector = ".related-list-item"
 
 var playerConfigErr = errors.New("failed to parse player config")
 
@@ -29,7 +29,7 @@ func ParseVideo(v *data.Video, res *http.Response) (_ []string, err error) {
 	if err != nil { return }
 
 	p := parseVideoInfo{v, doc}
-	return nil, p.parse()
+	return p.parse()
 }
 
 type parseVideoInfo struct {
@@ -37,20 +37,21 @@ type parseVideoInfo struct {
 	doc *goquery.Document
 }
 
-func (p *parseVideoInfo) parse() error {
+func (p *parseVideoInfo) parse() ([]string, error) {
 	if err := p.parseLikeDislike();
-		err != nil { return err }
-	if err := p.parseViewCount();
-		err != nil { return err }
+		err != nil { return nil, err }
 	if err := p.parseUploader();
-		err != nil { return err }
+		err != nil { return nil, err }
 	if err := p.parseDescription();
-		err != nil { return err }
+		err != nil { return nil, err }
 	if err := p.parsePlayerConfig();
-		err != nil { return err }
+		err != nil { return nil, err }
 	if err := p.parseMetas();
-		err != nil { return err }
-	return nil
+		err != nil { return nil, err }
+	var recommends []string
+	if err := p.parseRecommends(&recommends);
+		err != nil { return nil, err }
+	return recommends, nil
 }
 
 func (p *parseVideoInfo) parseLikeDislike() error {
@@ -67,14 +68,6 @@ func (p *parseVideoInfo) parseLikeDislike() error {
 	p.v.Dislikes, err = util.ExtractNumber(dislikeText)
 	if err != nil { return err }
 
-	return nil
-}
-
-func (p *parseVideoInfo) parseViewCount() error {
-	viewCountText := p.doc.Find(viewCountSelector).First().Text()
-	viewCount, err := util.ExtractNumber(viewCountText)
-	if err != nil { return err }
-	p.v.Views = viewCount
 	return nil
 }
 
@@ -130,6 +123,9 @@ func (p *parseVideoInfo) parseMetas() (err error) {
 			case "isFamilyFriendly":
 				if val, err := strconv.ParseBool(content);
 					err == nil { p.v.FamilyFriendly = val }
+			case "interactionCount":
+				if val, err := strconv.ParseUint(content, 10, 64);
+					err == nil { p.v.Views = val }
 			}
 		}
 		return true
@@ -188,5 +184,17 @@ func (p *parseVideoInfo) parsePlayerConfig() error {
 		p.v.Formats = append(p.v.Formats, *format)
 	}
 
+	return nil
+}
+
+func (p *parseVideoInfo) parseRecommends(r *[]string) error {
+	s := p.doc.Find(recommendSelector).Find(".content-wrapper").Find("a")
+	s.Each(func(i int, s *goquery.Selection) {
+		href, exists := s.Attr("href")
+		if !exists { return }
+		if !strings.HasPrefix(href, "/watch?v=") { return }
+		id := href[len("/watch?v="):]
+		*r = append(*r, id)
+	})
 	return nil
 }
