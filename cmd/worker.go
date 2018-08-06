@@ -11,6 +11,7 @@ import (
 	"github.com/terorie/yt-mango/net"
 	"github.com/terorie/yt-mango/data"
 	"errors"
+	"github.com/terorie/yt-mango/api"
 )
 
 var fatalErr = errors.New("fatal error, worker must stop")
@@ -61,13 +62,20 @@ func doWork(_ *cobra.Command, args []string) error {
 
 		var v data.Video
 		v.ID = videoId
+		var result interface{}
+
 		next, err := apis.Main.ParseVideo(&v, res)
-		if err != nil {
+		if err == api.VideoUnavailable {
+			log.Debugf("Video is unavailable: %s", videoId)
+			result = data.CrawlError{ uint(api.VideoUnavailable), time.Now() }
+		} else if err != nil {
 			log.Errorf("Parsing video \"%s\" failed: %s", videoId, err.Error())
 			return fatalErr
+		} else {
+			result = data.Crawl{ &v, time.Now() }
 		}
 
-		err = store.SubmitCrawl(&v, time.Now())
+		err = store.SubmitCrawl(result)
 		if err != nil {
 			log.Errorf("Uploading crawl of video \"%s\" failed: %s", videoId, err.Error())
 			return fatalErr

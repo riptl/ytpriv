@@ -1,14 +1,12 @@
 package store
 
 import (
-	"time"
 	"context"
 	"errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"github.com/mongodb/mongo-go-driver/mongo/clientopt"
 	"github.com/mongodb/mongo-go-driver/mongo"
-	"github.com/terorie/yt-mango/data"
 	"github.com/terorie/yt-mango/viperstruct"
 )
 
@@ -60,7 +58,7 @@ func DisconnectMongo() {
 	}
 }
 
-func SubmitCrawl(video *data.Video, crawlTime time.Time) (err error) {
-	_, err = videos.InsertOne(context.Background(), data.Crawl{video, crawlTime})
+func SubmitCrawl(result interface{}) (err error) {
+	_, err = videos.InsertOne(context.Background(), result)
 	return
 }
