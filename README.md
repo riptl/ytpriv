@@ -46,7 +46,8 @@ This can be changed using a config file (example in `/example.yml`)
 ##### Project structure
 
 - _/data_: Data definitions
-- _/api_: Abstract API definitions
+- _/api_: Shared functions and abstract API definitions
+- _/apis_: API implementations
     - _/apiclassic_: HTML API implementation (parsing using [goquery][goquery])
     - _/apijson_: JSON API implementation (parsing using [fastjson][fastjson])
 - _/net_: HTTP utilities (async HTTP implementation)
@@ -55,7 +56,6 @@ This can be changed using a config file (example in `/example.yml`)
     - _/store/queue.go_: Redis job queue (using [go-redis][go-redis])
     - _/store/db.go_: Mongo main DB (using [the official Mongo driver][mongodb-driver])
 - _/worker_ Worker mode
-- _/util_: Commonly used code
 - _/viperstruct:_ Deserialization utility for [Viper][viper] configuration
 
 - _/pretty_: (not yet used) Terminal color utilities

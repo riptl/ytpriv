@@ -1,4 +1,4 @@
-package util
+package api
 
 var MarkdownTextEscape EscapeMap
 var MarkdownLinkEscape EscapeMap

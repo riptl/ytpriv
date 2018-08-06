@@ -3,8 +3,6 @@ package api
 import (
 	"github.com/terorie/yt-mango/data"
 	"net/http"
-	"github.com/terorie/yt-mango/apijson"
-	"github.com/terorie/yt-mango/apiclassic"
 )
 
 type API struct {
@@ -24,33 +22,15 @@ type API struct {
 	ParseChannelVideoURLs func(*http.Response) ([]string, error)
 }
 
-// TODO Fallback option
-var Main *API = nil
+type Err int
+const (
+	GenericError = Err(iota)
+	VideoUnavailable
+)
 
-// TODO: Remove when everything is implemented
-var TempAPI = API{
-	GrabVideo: apiclassic.GrabVideo,
-	ParseVideo: apiclassic.ParseVideo,
-
-	GrabChannel: apiclassic.GrabChannel,
-	ParseChannel: apiclassic.ParseChannel,
-
-	GrabChannelPage: apijson.GrabChannelPage,
-	ParseChannelVideoURLs: apijson.ParseChannelVideoURLs,
-}
-
-var ClassicAPI = API{
-	GrabVideo: apiclassic.GrabVideo,
-	ParseVideo: apiclassic.ParseVideo,
-
-	GrabChannel: apiclassic.GrabChannel,
-	ParseChannel: apiclassic.ParseChannel,
-}
-
-var JsonAPI = API{
-	GrabVideo: apijson.GrabVideo,
-	ParseVideo: apijson.ParseVideo,
-
-	GrabChannelPage: apijson.GrabChannelPage,
-	ParseChannelVideoURLs: apijson.ParseChannelVideoURLs,
-}
+func (e Err) Error() string { switch e {
+	case VideoUnavailable:
+		return "video unavailable"
+	default:
+		return "unknown error"
+}}

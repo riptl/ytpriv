@@ -6,11 +6,12 @@ import (
 	"time"
 	"bufio"
 	log "github.com/sirupsen/logrus"
-	"github.com/terorie/yt-mango/api"
 	"fmt"
 	"github.com/terorie/yt-mango/net"
 	"sync/atomic"
 	"sync"
+	"github.com/terorie/yt-mango/api"
+	"github.com/terorie/yt-mango/apis"
 )
 
 var offset uint
@@ -94,7 +95,7 @@ func doChannelDump(_ *cobra.Command, args []string) error {
 			goto terminate
 		}
 		// Send new requests
-		req := api.Main.GrabChannelPage(channelID, page)
+		req := apis.Main.GrabChannelPage(channelID, page)
 		channelDumpContext.pagesToReceive.Add(1)
 		net.DoAsyncHTTP(req, results, page)
 
@@ -153,7 +154,7 @@ func channelDumpResult(res *net.JobResult) (page uint, numURLs int, err error) {
 	if res.Err != nil { return page, 0, res.Err }
 
 	// Parse response
-	channelURLs, err = api.Main.ParseChannelVideoURLs(res.Res)
+	channelURLs, err = apis.Main.ParseChannelVideoURLs(res.Res)
 	if err != nil { return }
 	numURLs = len(channelURLs)
 	if numURLs == 0 { return page, 0, nil } // End of data

@@ -10,7 +10,7 @@ import (
 	"github.com/valyala/fastjson"
 	"strings"
 	"net/http"
-	"github.com/terorie/yt-mango/util"
+	"github.com/terorie/yt-mango/api"
 )
 
 const likeBtnSelector = ".like-button-renderer-like-button-unclicked"
@@ -38,6 +38,10 @@ type parseVideoInfo struct {
 }
 
 func (p *parseVideoInfo) parse() ([]string, error) {
+	available, err := p.checkAvailability()
+	if err != nil { return nil, err }
+	if !available { return nil, api.VideoUnavailable }
+
 	if err := p.parseLikeDislike();
 		err != nil { return nil, err }
 	if err := p.parseUploader();
@@ -55,6 +59,16 @@ func (p *parseVideoInfo) parse() ([]string, error) {
 	return recommends, nil
 }
 
+// Check if video unavailable
+// Get the player-unavailable warning and check if it's hidden
+func (p *parseVideoInfo) checkAvailability() (bool, error) {
+	playerUnav := p.doc.Find("#player-unavailable")
+	if len(playerUnav.Nodes) != 1 {
+		return false, errors.New("cannot check if player is available")
+	}
+	return playerUnav.HasClass("hid"), nil
+}
+
 func (p *parseVideoInfo) parseLikeDislike() error {
 	likeText := p.doc.Find(likeBtnSelector).First().Text()
 	dislikeText := p.doc.Find(dislikeBtnSelector).First().Text()
@@ -64,9 +78,9 @@ func (p *parseVideoInfo) parseLikeDislike() error {
 	}
 
 	var err error
-	p.v.Likes, err = util.ExtractNumber(likeText)
+	p.v.Likes, err = api.ExtractNumber(likeText)
 	if err != nil { return err }
-	p.v.Dislikes, err = util.ExtractNumber(dislikeText)
+	p.v.Dislikes, err = api.ExtractNumber(dislikeText)
 	if err != nil { return err }
 
 	return nil
@@ -116,7 +130,7 @@ func (p *parseVideoInfo) parseMetas() (err error) {
 			case "channelId":
 				p.v.UploaderID = content
 			case "duration":
-				if val, err := util.ParseDuration(content); err == nil {
+				if val, err := api.ParseDuration(content); err == nil {
 					p.v.Duration = val
 				} else {
 					return false

@@ -5,9 +5,9 @@ import (
 	"os"
 	"bufio"
 	"github.com/spf13/cobra"
-	"github.com/terorie/yt-mango/api"
-	"github.com/terorie/yt-mango/net"
+		"github.com/terorie/yt-mango/net"
 	"github.com/sirupsen/logrus"
+	"github.com/terorie/yt-mango/apis"
 )
 
 const Version = "v0.1 -- dev"
@@ -67,9 +67,9 @@ func rootPreRun(_ *cobra.Command, _ []string) {
 	}
 
 	switch forceAPI {
-	case "": api.Main = &api.TempAPI
-	case "classic": api.Main = &api.ClassicAPI
-	case "json": api.Main = &api.JsonAPI
+	case "": apis.Main = &apis.TempAPI
+	case "classic": apis.Main = &apis.ClassicAPI
+	case "json": apis.Main = &apis.JsonAPI
 	default:
 		fmt.Fprintln(os.Stderr, "Invalid API specified.\n" +
 			"Valid options are: \"classic\" and \"json\"")

@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 	"regexp"
-	"github.com/terorie/yt-mango/util"
+	"github.com/terorie/yt-mango/api"
 )
 
 var matchThumbUrl = regexp.MustCompile("^.+/hqdefault\\.jpg")
@@ -47,14 +47,24 @@ func ParseVideo(v *data.Video, res *http.Response) ([]string, error) {
 		}
 	}
 	if playerResponse == nil { return nil, errors.New("no video details") }
-	if playerArgs == nil { return nil, errors.New("no player args") }
+	// Check if player args exist later (playabilityStatus has higher priority)
+
+	// Playability status
+	playability := playerResponse.Get("playabilityStatus")
+
+	// Playable at all?
+	if string(playability.GetStringBytes("status")) == "ERROR" {
+		return nil, api.VideoUnavailable
+	}
 
 	// Playable in embed?
-	playableInEmbedValue := playerResponse.Get("playabilityStatus", "playableInEmbed")
+	playableInEmbedValue := playability.Get("playableInEmbed")
 	if playableInEmbedValue.Exists() {
 		playableInEmbed, _ := playableInEmbedValue.Bool()
 		v.NoEmbed = !playableInEmbed
 	}
+
+	if playerArgs == nil { return nil, errors.New("no player args") }
 
 	if err := parseVideoDetails(v, playerResponse.Get("videoDetails"));
 		err != nil { return nil, err }
@@ -139,8 +149,8 @@ func parseVideoInfo(v *data.Video, videoInfo []*fastjson.Value) error {
 	if len(likeRatioParts) == 2 {
 		likesStr := likeRatioParts[0]
 		dislikesStr := likeRatioParts[1]
-		v.Likes, _ = util.ExtractNumber(likesStr)
-		v.Dislikes, _ = util.ExtractNumber(dislikesStr)
+		v.Likes, _ = api.ExtractNumber(likesStr)
+		v.Dislikes, _ = api.ExtractNumber(dislikesStr)
 	}
 
 	// Get upload date

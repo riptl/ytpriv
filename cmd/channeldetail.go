@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/spf13/cobra"
 	"github.com/terorie/yt-mango/api"
+	"github.com/terorie/yt-mango/apis"
 	"github.com/terorie/yt-mango/net"
 	"github.com/terorie/yt-mango/data"
 )
@@ -22,13 +23,13 @@ func doChannelDetail(_ *cobra.Command, args []string) error {
 	channelID, err := api.GetChannelID(channelID)
 	if err != nil { return err }
 
-	channelReq := api.Main.GrabChannel(channelID)
+	channelReq := apis.Main.GrabChannel(channelID)
 
 	res, err := net.Client.Do(channelReq)
 	if err != nil { return err }
 
 	var c data.Channel
-	api.Main.ParseChannel(&c, res)
+	apis.Main.ParseChannel(&c, res)
 
 	bytes, err := json.MarshalIndent(&c, "", "\t")
 	if err != nil { return err }

@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/terorie/yt-mango/store"
-	"github.com/terorie/yt-mango/api"
+	"github.com/terorie/yt-mango/apis"
 	"github.com/terorie/yt-mango/net"
 	"github.com/terorie/yt-mango/data"
 	"errors"
@@ -52,7 +52,7 @@ func doWork(_ *cobra.Command, args []string) error {
 
 		// TODO Move video back to wait queue if processing failed
 
-		req := api.Main.GrabVideo(videoId)
+		req := apis.Main.GrabVideo(videoId)
 		res, err := net.Client.Do(req)
 		if err != nil {
 			log.Errorf("Failed to download video \"%s\": %s", videoId, err.Error())
@@ -61,7 +61,7 @@ func doWork(_ *cobra.Command, args []string) error {
 
 		var v data.Video
 		v.ID = videoId
-		next, err := api.Main.ParseVideo(&v, res)
+		next, err := apis.Main.ParseVideo(&v, res)
 		if err != nil {
 			log.Errorf("Parsing video \"%s\" failed: %s", videoId, err.Error())
 			return fatalErr

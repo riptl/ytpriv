@@ -5,7 +5,7 @@ import (
 	"golang.org/x/net/html"
 	"bytes"
 	"strings"
-	"github.com/terorie/yt-mango/util"
+	"github.com/terorie/yt-mango/api"
 )
 
 const descriptionSelector = "#eow-description"
@@ -24,7 +24,7 @@ func (p *parseVideoInfo) parseDescription() error {
 		case html.TextNode:
 			// FIXME: "&amp;lt;" gets parsed to => "<"
 			// Write text to buffer, escaping markdown
-			err := util.MarkdownTextEscape.ToBuffer(c.Data, &buffer)
+			err := api.MarkdownTextEscape.ToBuffer(c.Data, &buffer)
 			if err != nil { return err }
 		case html.ElementNode:
 			switch c.Data {
