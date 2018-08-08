@@ -18,19 +18,9 @@ func (c *workerContext) workRoutine() {
 			default:
 		}
 
-		videoId, err := store.GetScheduledVideoID()
-		if err != nil && err.Error() != "redis: nil" {
-			log.Error("Queue error: ", err.Error())
-			c.errors <- err
-		}
-		if videoId == "" {
-			// Queue is empty, break
-			c.idleExists <- true
-			break
-		}
-
 		// TODO Move video back to wait queue if processing failed
 
+		videoId := <-c.jobs
 		req := apis.Main.GrabVideo(videoId)
 		res, err := net.Client.Do(req)
 		if err != nil {
@@ -65,12 +55,6 @@ func (c *workerContext) workRoutine() {
 				log.Errorf("Pushing related video IDs of video \"%s\" failed: %s", videoId, err.Error())
 				c.errors <- err
 			}
-		}
-
-		err = store.DoneVideoID(videoId)
-		if err != nil {
-			log.Errorf("Marking video \"%s\" as done failed: %s", videoId, err.Error())
-			c.errors <- err
 		}
 
 		c.results <- videoId

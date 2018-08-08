@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 	log "github.com/sirupsen/logrus"
+	"github.com/terorie/yt-mango/store"
 )
 
 const vpsInterval = 3
@@ -15,22 +16,21 @@ func Run(nThreads uint, ctxt context.Context) {
 	wc := workerContext{
 		ctxt: ctxt,
 		errors: make(chan error),
-		idleExists: make(chan bool),
+		jobs: make(chan string),
+		idle: make(chan bool),
 		results: make(chan string),
 	}
-
-	activeRoutines := nThreads
 
 	// Start routines
 	for i := uint(0); i < nThreads; i++ {
 		go wc.workRoutine()
 	}
 
+	// Start loading queue
+	go wc.fetchJobs()
+
 	// Count errors
 	var errorTimes []time.Time
-
-	// Idle queue timer
-	var idleTimer <-chan time.Time
 
 	// Videos per second timer
 	var videosLastInterval = 0
@@ -45,13 +45,20 @@ func Run(nThreads uint, ctxt context.Context) {
 
 		// Video crawled
 		case videoId := <-wc.results:
+			err := store.DoneVideoID(videoId)
+			if err != nil {
+				log.Errorf("Marking video \"%s\" as done failed: %s", videoId, err.Error())
+				cancelFunc()
+				return
+			}
 			log.WithField("vid", videoId).Debug("Visited video")
 			videosLastInterval++
 
 		// A routine exited
-		case <-wc.idleExists:
-			activeRoutines--
-			idleTimer = time.After(3 * time.Second)
+		case <-wc.idle:
+			log.Info("No jobs on queue. Waiting 10 seconds.")
+			time.Sleep(10 * time.Second)
+			go wc.fetchJobs()
 
 		// Print videos per second
 		case <-vpsTimer:
@@ -60,15 +67,6 @@ func Run(nThreads uint, ctxt context.Context) {
 			videosLastInterval = 0
 			// Respawn timer
 			vpsTimer = time.After(vpsInterval * time.Second)
-
-		// Time to respawn workers
-		case <-idleTimer:
-			delta := nThreads - activeRoutines
-			log.Infof("%d threads idle because the queue is empty.", delta)
-			log.Infof("Respawning %d threads", delta)
-			for i := uint(0); i < delta; i++ {
-				go wc.workRoutine()
-			}
 
 		// Rescan and drop old errors
 		case <-wc.errors:
@@ -89,6 +87,28 @@ func Run(nThreads uint, ctxt context.Context) {
 				cancelFunc()
 				return
 			}
+		}
+	}
+}
+
+func (c *workerContext) fetchJobs() {
+	for {
+		select {
+		case <-c.ctxt.Done():
+			return
+		default:
+			videoId, err := store.GetScheduledVideoID()
+			if err != nil && err.Error() != "redis: nil" {
+				log.Error("Queue error: ", err.Error())
+				c.errors <- err
+			}
+			if videoId == "" {
+				// Queue is empty, break
+				c.idle <- true
+				return
+			}
+
+			c.jobs <- videoId
 		}
 	}
 }

@@ -5,7 +5,6 @@ import (
 	"errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"github.com/mongodb/mongo-go-driver/mongo/clientopt"
 	"github.com/mongodb/mongo-go-driver/mongo"
 	"github.com/terorie/yt-mango/viperstruct"
 	"github.com/mongodb/mongo-go-driver/bson"
@@ -18,14 +17,12 @@ var videos *mongo.Collection
 
 func ConnectMongo() error {
 	// Default config vars
-	viper.SetDefault("mongo.host", "mongodb://127.0.0.1:27017")
-	viper.SetDefault("mongo.dbName", "yt-mango")
+	viper.SetDefault("mongo.conn", "mongodb://127.0.0.1:27017")
+	viper.SetDefault("mongo.database", "yt-mango")
 
 	var mongoConf struct{
-		Host string `viper:"mongo.host"`
-		User string `viper:"mongo.user,optional"`
-		Pass string `viper:"mongo.pass,optional"`
-		DbName string `viper:"mongo.dbName"`
+		Conn   string `viper:"mongo.conn"`
+		DbName string `viper:"mongo.database"`
 	}
 
 	// Read config
@@ -33,13 +30,7 @@ func ConnectMongo() error {
 	if err != nil { return err }
 
 	// Create mongo client
-	dbClient, err = mongo.NewClientWithOptions(
-		mongoConf.Host,
-		clientopt.Auth(clientopt.Credential{
-			Username: mongoConf.User,
-			Password: mongoConf.Pass,
-		}),
-	)
+	dbClient, err = mongo.NewClient(mongoConf.Conn)
 	if err != nil { return err }
 
 	ctxt := context.Background()

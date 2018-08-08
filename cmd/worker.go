@@ -24,7 +24,7 @@ var Worker = cobra.Command{
 	Run: cmdFunc(doWork),
 }
 
-func doWork(c *cobra.Command, args []string) error {
+func doWork(_ *cobra.Command, args []string) error {
 	var overrideFile string
 
 	if len(args) == 1 { overrideFile = args[0] }
