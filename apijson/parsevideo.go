@@ -36,18 +36,16 @@ func ParseVideo(v *data.Video, res *http.Response) ([]string, error) {
 	// Get interesting objects
 	var pageResponse *fastjson.Value
 	var playerResponse *fastjson.Value
-	var playerArgs *fastjson.Value
 	for _, sub := range rootArray {
 		if playerResponse == nil {
 			playerResponse = sub.Get("playerResponse")
 			pageResponse = sub.Get("response")
-		}
-		if playerArgs == nil {
-			playerArgs = sub.Get("player", "args")
+			v.URL = string(sub.GetStringBytes("url"))
 		}
 	}
+
+	if v.URL != "" { v.URL = "https://www.youtube.com" + v.URL }
 	if playerResponse == nil { return nil, errors.New("no video details") }
-	// Check if player args exist later (playabilityStatus has higher priority)
 
 	// Playability status
 	playability := playerResponse.Get("playabilityStatus")
@@ -59,7 +57,6 @@ func ParseVideo(v *data.Video, res *http.Response) ([]string, error) {
 		return nil, api.VideoUnavailable
 	case "LOGIN_REQUIRED":
 		v.FamilyFriendly = false
-		return nil, api.LoginRequired
 	default:
 		v.FamilyFriendly = true
 	}
@@ -70,8 +67,6 @@ func ParseVideo(v *data.Video, res *http.Response) ([]string, error) {
 		playableInEmbed, _ := playableInEmbedValue.Bool()
 		v.NoEmbed = !playableInEmbed
 	}
-
-	if playerArgs == nil { return nil, errors.New("no player args") }
 
 	if err := parseVideoDetails(v, playerResponse.Get("videoDetails"));
 		err != nil { return nil, err }
@@ -85,9 +80,6 @@ func ParseVideo(v *data.Video, res *http.Response) ([]string, error) {
 
 	// Get related vids
 	related := parseVideoRelated(watchNextResults)
-
-	// Get URL
-	v.URL = string(playerArgs.GetStringBytes("loaderUrl"))
 
 	return related, nil
 }
@@ -171,6 +163,8 @@ func parseVideoInfo(v *data.Video, videoInfo []*fastjson.Value) error {
 	// Get upload date
 	dateText := string(secondary.GetStringBytes("dateText", "simpleText"))
 	dateText = strings.TrimPrefix(dateText, "Published on ")
+	dateText = strings.TrimPrefix(dateText, "Uploaded on ") // Unlisted video
+
 	date, err := time.Parse("Jan _2, 2006", dateText)
 	if err == nil { v.UploadDate = date }
 
