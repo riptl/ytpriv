@@ -54,7 +54,7 @@ func Run(nThreads uint, ctxt context.Context) {
 			// Rescan and drop old errors
 			var newErrorTimes []time.Time
 			for _, t := range errorTimes {
-				if t.Sub(time.Now()) < 10 * time.Second {
+				if t.Sub(time.Now()) < 5 * time.Second {
 					newErrorTimes = append(newErrorTimes, t)
 				}
 			}
@@ -64,7 +64,7 @@ func Run(nThreads uint, ctxt context.Context) {
 			errorTimes = append(errorTimes, time.Now())
 
 			// If too many errors exit
-			if len(errorTimes) > 10 {
+			if len(errorTimes) > int(nThreads / 2) {
 				log.Error("Exiting because of too many errors.")
 				cancelFunc()
 				return
