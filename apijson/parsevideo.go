@@ -53,13 +53,16 @@ func ParseVideo(v *data.Video, res *http.Response) ([]string, error) {
 	playability := playerResponse.Get("playabilityStatus")
 
 	// Playable at all?
-	if string(playability.GetStringBytes("status")) == "ERROR" {
+	playabilityStatus := string(playability.GetStringBytes("status"))
+	switch playabilityStatus {
+	case "ERROR":
 		return nil, api.VideoUnavailable
+	case "LOGIN_REQUIRED":
+		v.FamilyFriendly = false
+		return nil, api.LoginRequired
+	default:
+		v.FamilyFriendly = true
 	}
-
-	// If no sign-in is requested, it's family friendly
-	v.FamilyFriendly =
-		string(playability.GetStringBytes("reason")) != "Sign in to confirm your age"
 
 	// Playable in embed?
 	playableInEmbedValue := playability.Get("playableInEmbed")
