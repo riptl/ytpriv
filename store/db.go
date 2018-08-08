@@ -8,6 +8,7 @@ import (
 	"github.com/mongodb/mongo-go-driver/mongo/clientopt"
 	"github.com/mongodb/mongo-go-driver/mongo"
 	"github.com/terorie/yt-mango/viperstruct"
+	"github.com/mongodb/mongo-go-driver/bson"
 )
 
 var dbClient *mongo.Client
@@ -41,13 +42,32 @@ func ConnectMongo() error {
 	)
 	if err != nil { return err }
 
-	if err := dbClient.Connect(context.TODO());
+	ctxt := context.Background()
+
+	if err := dbClient.Connect(ctxt);
 		err != nil { return err }
 
 	db := dbClient.Database(mongoConf.DbName)
 	if db == nil { return errors.New("failed to create database") }
 
 	videos = db.Collection("videos")
+
+	// Create indexes on collection
+	indexView := videos.Indexes()
+	_, err = indexView.CreateMany(ctxt, []mongo.IndexModel{
+		// Index video ID
+		{ Keys: bson.NewDocument(bson.EC.Int32("video.id", 1)) },
+		// Index uploader ID, sort by upload date
+		{ Keys: bson.NewDocument(
+			bson.EC.Int32("video.uploader_id", 1),
+			bson.EC.Int32("video.upload_date", 1),
+		)},
+		// Index all videos by upload date
+		{ Keys: bson.NewDocument(bson.EC.Int32("video.upload_date", 1)) },
+		// Index all videos by tags
+		{ Keys: bson.NewDocument(bson.EC.Int32("video.tags", 1 ))},
+	})
+	if err != nil { return err }
 
 	return nil
 }
