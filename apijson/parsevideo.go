@@ -147,6 +147,14 @@ func parseVideoInfo(v *data.Video, videoInfo []*fastjson.Value) error {
 		}
 	}
 
+	// Check unlisted status (from badges)
+	for _, badge := range primary.GetArray("badges") {
+		if string(badge.GetStringBytes("metadataBadgeRenderer", "label")) == "Unlisted" {
+			v.Visibility = data.VisibilityUnlisted
+			break
+		}
+	}
+
 	// Get like/dislike count
 	likeRatioStr := string(primary.GetStringBytes("sentimentBar", "sentimentBarRenderer", "tooltip"))
 	likeRatioParts := strings.Split(likeRatioStr, " / ")
