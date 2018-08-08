@@ -141,6 +141,9 @@ func (p *parseVideoInfo) parseMetas() (err error) {
 			case "interactionCount":
 				if val, err := strconv.ParseUint(content, 10, 64);
 					err == nil { p.v.Views = val }
+			case "unlisted":
+				if val, err := strconv.ParseBool(content);
+					err == nil && val { p.v.Visibility = data.VisibilityUnlisted }
 			}
 		}
 		return true
@@ -184,20 +187,13 @@ func (p *parseVideoInfo) parsePlayerConfig() error {
 	if args == nil { return playerConfigErr }
 
 	// Get fmt_list string
-	fmtList := args.GetStringBytes("fmt_list")
-	if fmtList == nil { return playerConfigErr }
+	fmts := string(args.GetStringBytes("fmt_list"))
+	if fmts == "" { return playerConfigErr }
 
 	// Split and decode it
-	fmts := strings.Split(string(fmtList), ",")
-	for _, fmt := range fmts {
-		parts := strings.Split(fmt, "/")
-		if len(parts) != 2 { return playerConfigErr }
-		formatID := parts[0]
-		// Look up the format ID
-		format := data.FormatsById[formatID]
-		if format == nil { return playerConfigErr }
-		p.v.Formats = append(p.v.Formats, *format)
-	}
+	fmtList, err := api.ParseFormatList(fmts)
+	if err != nil { return err }
+	p.v.Formats = fmtList
 
 	return nil
 }
