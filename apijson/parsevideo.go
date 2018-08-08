@@ -15,7 +15,6 @@ import (
 
 var matchThumbUrl = regexp.MustCompile("^.+/hqdefault\\.jpg")
 
-var missingData = errors.New("missing data")
 var unexpectedType = errors.New("unexpected type")
 
 func ParseVideo(v *data.Video, res *http.Response) ([]string, error) {
@@ -36,11 +35,15 @@ func ParseVideo(v *data.Video, res *http.Response) ([]string, error) {
 	// Get interesting objects
 	var pageResponse *fastjson.Value
 	var playerResponse *fastjson.Value
+	var playerArgs *fastjson.Value
 	for _, sub := range rootArray {
 		if playerResponse == nil {
 			playerResponse = sub.Get("playerResponse")
 			pageResponse = sub.Get("response")
 			v.URL = string(sub.GetStringBytes("url"))
+		}
+		if playerArgs == nil {
+			playerArgs = sub.Get("player", "args")
 		}
 	}
 
@@ -80,6 +83,12 @@ func ParseVideo(v *data.Video, res *http.Response) ([]string, error) {
 
 	// Get related vids
 	related := parseVideoRelated(watchNextResults)
+
+	// Parse player args
+	if playerArgs != nil {
+		if err := parsePlayerArgs(v, playerArgs);
+			err != nil { return nil, err }
+	}
 
 	return related, nil
 }
@@ -182,6 +191,14 @@ func parseVideoInfo(v *data.Video, videoInfo []*fastjson.Value) error {
 		}
 	}
 
+	return nil
+}
+
+func parsePlayerArgs(v *data.Video, args *fastjson.Value) error {
+	fmts := string(args.GetStringBytes("fmt_list"))
+	fmtList, err := api.ParseFormatList(fmts)
+	if err != nil { return err }
+	v.Formats = fmtList
 	return nil
 }
 
