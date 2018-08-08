@@ -28,17 +28,18 @@ func ParseVideo(v *data.Video, res *http.Response) (_ []string, err error) {
 	doc, err := goquery.NewDocumentFromReader(res.Body)
 	if err != nil { return }
 
-	p := parseVideoInfo{v, doc}
+	p := parseVideoInfo{v: v, doc: doc}
 	return p.parse()
 }
 
 type parseVideoInfo struct {
 	v *data.Video
 	doc *goquery.Document
+	restricted bool
 }
 
 func (p *parseVideoInfo) parse() ([]string, error) {
-	available, err := p.checkAvailability()
+	available, err := p.isAvailable()
 	if err != nil { return nil, err }
 	if !available { return nil, api.VideoUnavailable }
 
@@ -59,14 +60,31 @@ func (p *parseVideoInfo) parse() ([]string, error) {
 	return recommends, nil
 }
 
-// Check if video unavailable
-// Get the player-unavailable warning and check if it's hidden
-func (p *parseVideoInfo) checkAvailability() (bool, error) {
-	playerUnav := p.doc.Find("#player-unavailable")
-	if len(playerUnav.Nodes) != 1 {
+func (p *parseVideoInfo) isAvailable() (bool, error) {
+	// Get the player-unavailable warning and check if it's hidden
+	unavTag := p.doc.Find("#player-unavailable")
+	if len(unavTag.Nodes) != 1 {
 		return false, errors.New("cannot check if player is available")
 	}
-	return playerUnav.HasClass("hid"), nil
+
+	// Warning is hidden: Must be available
+	if unavTag.HasClass("hid") { return true, nil }
+
+	// Video is either restricted or deleted from here …
+	p.restricted = true
+
+	// Find the <meta name="title"… tag.
+	// If it's empty, then the video is unavailable
+	var unav bool
+	p.doc.Find("meta").EachWithBreak(func(i int, s *goquery.Selection) bool {
+		if s.AttrOr("name", "") == "title" {
+			unav = s.AttrOr("content", "") == ""
+			return false
+		}
+		return true
+	})
+
+	return !unav, nil
 }
 
 func (p *parseVideoInfo) parseLikeDislike() error {
@@ -153,6 +171,9 @@ func (p *parseVideoInfo) parseMetas() (err error) {
 }
 
 func (p *parseVideoInfo) parsePlayerConfig() error {
+	// Player config is unavailable on restricted vids
+	if p.restricted { return nil }
+
 	var json string
 
 	p.doc.Find("script").EachWithBreak(func(_ int, s *goquery.Selection) bool {
