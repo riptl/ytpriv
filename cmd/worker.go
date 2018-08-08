@@ -2,16 +2,15 @@ package cmd
 
 import (
 	"os"
-	"time"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/terorie/yt-mango/store"
-	"github.com/terorie/yt-mango/apis"
-	"github.com/terorie/yt-mango/net"
-	"github.com/terorie/yt-mango/data"
 	"errors"
-	"github.com/terorie/yt-mango/api"
+	"github.com/terorie/yt-mango/worker"
+	"context"
+	"os/signal"
+	"syscall"
 )
 
 var fatalErr = errors.New("fatal error, worker must stop")
@@ -25,7 +24,7 @@ var Worker = cobra.Command{
 	Run: cmdFunc(doWork),
 }
 
-func doWork(_ *cobra.Command, args []string) error {
+func doWork(c *cobra.Command, args []string) error {
 	var overrideFile string
 
 	if len(args) == 1 { overrideFile = args[0] }
@@ -42,63 +41,20 @@ func doWork(_ *cobra.Command, args []string) error {
 	defer store.DisconnectMongo()
 	log.Info("Connected to Mongo.")
 
-	for {
-		videoId, err := store.GetScheduledVideoID()
-		if err != nil && err.Error() != "redis: nil" { return err }
-		if videoId == "" {
-			log.Info("Queue is empty, idling for 10 seconds.")
-			time.Sleep(10 * time.Second)
-			continue
-		}
-
-		// TODO Move video back to wait queue if processing failed
-
-		req := apis.Main.GrabVideo(videoId)
-		res, err := net.Client.Do(req)
-		if err != nil {
-			log.Errorf("Failed to download video \"%s\": %s", videoId, err.Error())
-			return fatalErr
-		}
-
-		var v data.Video
-		v.ID = videoId
-		var result interface{}
-
-		next, err := apis.Main.ParseVideo(&v, res)
-		if err == api.VideoUnavailable {
-			log.Debugf("Video is unavailable: %s", videoId)
-			result = data.CrawlError{ uint(api.VideoUnavailable), time.Now() }
-		} else if err != nil {
-			log.Errorf("Parsing video \"%s\" failed: %s", videoId, err.Error())
-			return fatalErr
-		} else {
-			result = data.Crawl{ &v, time.Now() }
-		}
-
-		err = store.SubmitCrawl(result)
-		if err != nil {
-			log.Errorf("Uploading crawl of video \"%s\" failed: %s", videoId, err.Error())
-			return fatalErr
-		}
-
-		if len(next) > 0 {
-			err = store.SubmitVideoIDs(next)
-			if err != nil {
-				log.Errorf("Pushing related video IDs of video \"%s\" failed: %s", videoId, err.Error())
-				return fatalErr
-			}
-		}
-
-		err = store.DoneVideoID(videoId)
-		if err != nil {
-			log.Errorf("Marking video \"%s\" as done failed: %s", videoId, err.Error())
-			return fatalErr
-		}
-
-		log.Infof("Visited %s.", videoId)
-	}
+	ctxt, cancelFunc := context.WithCancel(context.Background())
+	watchExit(cancelFunc)
+	worker.Run(concurrentRequests, ctxt)
 
 	return nil
+}
+
+func watchExit(f context.CancelFunc) {
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		f()
+	}()
 }
 
 func readConfig(overrideFile string) error {

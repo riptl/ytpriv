@@ -85,7 +85,7 @@ func SubmitVideoIDs(ids []string) error {
 //  - "", nil: No video ID in queue
 //  - "", <error>: Error occurred
 func GetScheduledVideoID() (string, error) {
-	return queue.RPopLPush(videoWaitQueue, videoWorkQueue).Result()
+	return queue.BRPopLPush(videoWaitQueue, videoWorkQueue, 10 * time.Second).Result()
 }
 
 // Removes a video from VIDEO_WORK
