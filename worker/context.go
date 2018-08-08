@@ -13,4 +13,8 @@ type workerContext struct{
 	// Sent when a worker exists
 	// because it's idle
 	idleExists chan bool
+
+	// Sent when a worker
+	// processes a video
+	results chan string
 }

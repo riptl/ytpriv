@@ -71,7 +71,7 @@ func SubmitVideoIDs(ids []string) error {
 
 		// New ID, add to wait queue
 		if numAdded == 1 {
-			log.Debugf(" + Added new video ID \"%s\" to wait queue.", id)
+			log.WithField("vid", id).Debug("Found new video")
 			if err := queue.LPush(videoWaitQueue, id).Err();
 				err != nil { return err }
 		}

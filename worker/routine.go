@@ -73,6 +73,6 @@ func (c *workerContext) workRoutine() {
 			c.errors <- err
 		}
 
-		log.Infof("Visited %s.", videoId)
+		c.results <- videoId
 	}
 }

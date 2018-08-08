@@ -6,6 +6,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const vpsInterval = 3
+
 // Expect store connected to Mongo and Redis
 func Run(nThreads uint, ctxt context.Context) {
 	var cancelFunc context.CancelFunc
@@ -14,6 +16,7 @@ func Run(nThreads uint, ctxt context.Context) {
 		ctxt: ctxt,
 		errors: make(chan error),
 		idleExists: make(chan bool),
+		results: make(chan string),
 	}
 
 	activeRoutines := nThreads
@@ -29,6 +32,10 @@ func Run(nThreads uint, ctxt context.Context) {
 	// Idle queue timer
 	var idleTimer <-chan time.Time
 
+	// Videos per second timer
+	var videosLastInterval = 0
+	var vpsTimer = time.After(vpsInterval * time.Second)
+
 	// Maintain routines
 	for {
 		select {
@@ -36,13 +43,26 @@ func Run(nThreads uint, ctxt context.Context) {
 			log.Info("Requested cancellation.")
 			return
 
+		// Video crawled
+		case videoId := <-wc.results:
+			log.WithField("vid", videoId).Debug("Visited video")
+			videosLastInterval++
+
+		// A routine exited
 		case <-wc.idleExists:
-			// A routine exited
 			activeRoutines--
 			idleTimer = time.After(3 * time.Second)
 
+		// Print videos per second
+		case <-vpsTimer:
+			log.WithField("vps", videosLastInterval / vpsInterval).
+				Info("Videos per second")
+			videosLastInterval = 0
+			// Respawn timer
+			vpsTimer = time.After(vpsInterval * time.Second)
+
+		// Time to respawn workers
 		case <-idleTimer:
-			// Time to respawn workers
 			delta := nThreads - activeRoutines
 			log.Infof("%d threads idle because the queue is empty.", delta)
 			log.Infof("Respawning %d threads", delta)
@@ -50,8 +70,8 @@ func Run(nThreads uint, ctxt context.Context) {
 				go wc.workRoutine()
 			}
 
+		// Rescan and drop old errors
 		case <-wc.errors:
-			// Rescan and drop old errors
 			var newErrorTimes []time.Time
 			for _, t := range errorTimes {
 				if t.Sub(time.Now()) < 5 * time.Second {
