@@ -21,9 +21,6 @@ const videoWaitQueue = "VIDEO_WAIT"
 // are being crawled
 const videoWorkQueue = "VIDEO_WORK"
 
-// Timeout for blocking functions
-const queueTimeout = 30 * time.Second
-
 var queue *redis.Client
 
 // Redis queue
@@ -92,6 +89,16 @@ func GetScheduledVideoID() (string, error) {
 // to show that the job is done.
 func DoneVideoID(videoID string) error {
 	return queue.LRem(videoWorkQueue, -1, videoID).Err()
+}
+
+// Removes a video from VIDEO_WORK
+// and places it into VIDEO_WAIT
+func FailedVideoID(videoID string) error {
+	if err := queue.LRem(videoWorkQueue, -1, videoID).Err();
+		err != nil { return err }
+	if err := queue.LPush(videoWaitQueue, videoID).Err();
+		err != nil { return err }
+	return nil
 }
 
 // TODO Recrawl oldest video IDs with "ZPOPMIN VIDEO_SET" & ZADD VIDEO_SET" & "LPUSH VIDEO_WAIT"

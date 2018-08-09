@@ -43,7 +43,7 @@ func doWork(_ *cobra.Command, args []string) error {
 
 	ctxt, cancelFunc := context.WithCancel(context.Background())
 	watchExit(cancelFunc)
-	worker.Run(concurrentRequests, ctxt)
+	worker.Run(ctxt)
 
 	return nil
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/mongodb/mongo-go-driver/mongo"
 	"github.com/terorie/yt-mango/viperstruct"
+	"github.com/terorie/yt-mango/data"
 )
 
 var dbClient *mongo.Client
@@ -51,7 +52,16 @@ func DisconnectMongo() {
 	}
 }
 
-func SubmitCrawl(result interface{}) (err error) {
-	_, err = videos.InsertOne(context.Background(), result)
+func SubmitCrawls(results []data.Crawl) (err error) {
+	iResults := make([]interface{}, len(results))
+	for i, r := range results {
+		iResults[i] = r
+	}
+
+	_, err = videos.InsertMany(context.Background(), iResults)
+	if err != nil {
+		log.Errorf("Uploading crawl of %d videos failed: %s", len(results), err.Error())
+	}
+
 	return
 }

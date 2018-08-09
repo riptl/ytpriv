@@ -1,6 +1,9 @@
 package worker
 
-import "context"
+import (
+	"context"
+	"github.com/terorie/yt-mango/data"
+)
 
 type workerContext struct{
 	// Worker management
@@ -10,12 +13,24 @@ type workerContext struct{
 	// an error
 	errors chan error
 
-	// Job queue
+	// New videos to process
 	jobs chan string
 
-	// Sent when a worker
-	// processed a video
-	results chan string
+	// Bulk buffer size
+	bulkSize uint
+
+	// Crawl results (buffered)
+	results chan interface{}
+
+	// Crawl result IDs
+	resultIDs chan string
+
+	// Crawl fail IDs
+	failIDs chan string
+
+	// Crawl results in a batch
+	// ready to be uploaded to DB
+	resultBatches chan []data.Crawl
 
 	// Sent whenever the
 	// queue goes idle

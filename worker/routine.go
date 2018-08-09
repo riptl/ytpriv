@@ -35,19 +35,22 @@ func (c *workerContext) workRoutine() {
 		next, err := apis.Main.ParseVideo(&v, res)
 		if err == api.VideoUnavailable {
 			log.Debugf("Video is unavailable: %s", videoId)
-			result = data.CrawlError{ uint(api.VideoUnavailable), time.Now() }
+			result = data.CrawlError{
+				VideoId: videoId,
+				Err: api.VideoUnavailable,
+				VisitedTime: time.Now(),
+			}
 		} else if err != nil {
 			log.Errorf("Parsing video \"%s\" failed: %s", videoId, err.Error())
 			c.errors <- err
 		} else {
-			result = data.Crawl{ &v, time.Now() }
+			result = data.Crawl{
+				Video: &v,
+				VisitedTime: time.Now(),
+			}
 		}
 
-		err = store.SubmitCrawl(result)
-		if err != nil {
-			log.Errorf("Uploading crawl of video \"%s\" failed: %s", videoId, err.Error())
-			c.errors <- err
-		}
+		c.results <- result
 
 		if len(next) > 0 {
 			err = store.SubmitVideoIDs(next)
@@ -56,7 +59,5 @@ func (c *workerContext) workRoutine() {
 				c.errors <- err
 			}
 		}
-
-		c.results <- videoId
 	}
 }

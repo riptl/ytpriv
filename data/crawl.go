@@ -8,6 +8,7 @@ type Crawl struct{
 }
 
 type CrawlError struct{
-	ErrorId uint
+	VideoId string
+	Err error
 	VisitedTime time.Time `bson:"visited_time"`
 }
