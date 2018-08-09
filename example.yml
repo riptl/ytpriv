@@ -1,6 +1,15 @@
 # YT-Mango example configuration
 # Lines prefixed with '#' are treated as comments and ignored
 
+# Max connections to YouTube
+connections: 32
+
+# Submit videos in batches
+# The bigger, the less often the database
+# is accessed.
+# Recommended value is <2 * connections>
+bulkwrite: 64
+
 # Configuration of the Mongo database
 mongo:
   # Mongo server connection string
