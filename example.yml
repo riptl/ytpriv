@@ -3,16 +3,11 @@
 
 # Configuration of the Mongo database
 mongo:
-  # Address of the Mongo server to connect to
-  host: "mongodb://localhost:27107"
-
-  # Credentials
-  # (leave blank if no login is needed)
-  user: ""
-  pass: ""
+  # Mongo server connection string
+  conn: "mongodb://localhost:27107"
 
   # Name of the Mongo database ("show dbs")
-  dbName: "yt-mango"
+  database: "yt-mango"
 
 # Configuration of the Redis queue
 queue:
