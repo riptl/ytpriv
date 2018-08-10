@@ -41,3 +41,6 @@ queue:
 
   # Database number (0-15)
   db: 0
+
+  # Timeout in milliseconds
+  timeout: 10000
