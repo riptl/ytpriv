@@ -12,7 +12,7 @@ type Video struct {
 	Duration uint64 `json:"duration" bson:"duration"`
 	UploaderID string `json:"uploader_id" bson:"uploader_id"`
 	UploaderURL string `json:"uploader_url" bson:"uploader_url"`
-	Formats []Format `json:"formats,omitempty" bson:"formats,omitempty"`
+	Formats []string `json:"formats,omitempty" bson:"formats,omitempty"`
 
 	// Content metadata
 	Uploader string `json:"uploader" bson:"uploader"` // The channel name can change

@@ -4,7 +4,6 @@ import (
 	"strconv"
 	"strings"
 	"errors"
-	"github.com/terorie/yt-mango/data"
 )
 
 var durationErr = errors.New("unknown duration code")
@@ -41,16 +40,13 @@ func ParseDuration(d string) (uint64, error) {
 }
 
 // "43/640x360,18/640x360,36/320x180,17/176x144" -> [Format{…}, …]
-func ParseFormatList(fmtStr string) (fmtList []data.Format, _ error) {
+func ParseFormatList(fmtStr string) (fmtList []string, _ error) {
 	fmts := strings.Split(fmtStr, ",")
 	for _, fmt := range fmts {
 		parts := strings.Split(fmt, "/")
 		if len(parts) != 2 { return nil, fmtListErr }
 		formatID := parts[0]
-		// Look up the format ID
-		format := data.FormatsById[formatID]
-		if format == nil { return nil, noFmtErr }
-		fmtList = append(fmtList, *format)
+		fmtList = append(fmtList, formatID)
 	}
 	return
 }
