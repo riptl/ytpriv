@@ -1,6 +1,11 @@
 # YT-Mango example configuration
 # Lines prefixed with '#' are treated as comments and ignored
 
+# Crawler name (max 10 characters)
+# Adds your name to your uploads
+# Who can upload the most?
+myname: "anonymous"
+
 # Max connections to YouTube
 connections: 32
 

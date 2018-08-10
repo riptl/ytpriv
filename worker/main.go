@@ -36,6 +36,7 @@ func Run(ctxt context.Context) {
 	}
 
 	var c workerContext
+	c.foundBy = conf.MyName
 
 	var cancelFunc context.CancelFunc
 	c.ctxt, cancelFunc = context.WithCancel(ctxt)

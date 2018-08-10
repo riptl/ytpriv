@@ -46,6 +46,7 @@ func (c *workerContext) workRoutine() {
 			result = data.Crawl{
 				Video: &v,
 				VisitedTime: time.Now(),
+				CrawlerName: c.foundBy,
 			}
 		}
 
