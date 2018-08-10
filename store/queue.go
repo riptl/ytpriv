@@ -60,17 +60,39 @@ func DisconnectQueue() {
 
 // Add a video ID to VIDEO_SET and to
 // VIDEO_WAIT if they are newly found
-func SubmitVideoID(id string) error {
-	// Check against the sorted set
-	numAdded, err := queue.ZAdd(videoSet, redis.Z{float64(time.Now().Unix()), id}).Result()
+func SubmitVideoIDs(ids []string) error {
+	// Pipeline for querying the status of video IDs
+	statusPipe := queue.Pipeline()
+	defer statusPipe.Close()
+
+	// Cached cmds
+	statusCmds := make([]*redis.IntCmd, len(ids))
+
+	// Queue writes
+	for i, id := range ids {
+		statusCmds[i] = statusPipe.
+			ZAdd(videoSet, redis.Z{float64(time.Now().Unix()), id})
+	}
+
+	// Exec writes
+	_, err := statusPipe.Exec()
 	if err != nil { return err }
 
-	// New ID, add to wait queue
-	if numAdded == 1 {
-		//log.WithField("vid", id).Debug("Found new video")
-		if err := queue.LPush(videoWaitQueue, id).Err();
-			err != nil { return err }
+	// IDs that get written to VIDEO_WAIT
+	var newIDs []interface{}
+
+	// Check if IDs exist
+	for i, cmd := range statusCmds {
+		// New ID, add to wait queue
+		if cmd.Val() == 1 {
+			//log.WithField("vid", id).Debug("Found new video")
+			newIDs = append(newIDs, ids[i])
+		}
 	}
+
+	// New IDs, add to wait queue
+	queue.LPush(videoWaitQueue, newIDs...)
+
 	return nil
 }
 
@@ -79,14 +101,46 @@ func SubmitVideoID(id string) error {
 //  - "<video-id>", nil: New video ID assigned to this worker
 //  - "", nil: No video ID in queue
 //  - "", <error>: Error occurred
-func GetScheduledVideoID() (string, error) {
-	return queue.RPopLPush(videoWaitQueue, videoWorkQueue).Result()
+func GetScheduledVideoIDs(count uint) (ids []string, err error) {
+	pipe := queue.Pipeline()
+	defer pipe.Close()
+
+	cmds := make([]*redis.StringCmd, count)
+	for i := uint(0); i < count; i++ {
+		cmds[i] = pipe.RPopLPush(videoWaitQueue, videoWorkQueue)
+	}
+
+	// Errors get checked per command
+	pipe.Exec()
+
+	// Get IDs from pipe
+	for _, cmd := range cmds {
+		id, cerr := cmd.Result()
+
+		// End of queue reached
+		if id == "" ||
+			cerr != nil && cerr.Error() == "redis: nil" { return }
+
+		// Real error
+		if cerr != nil { err = cerr; return }
+
+		// Result
+		ids = append(ids, id)
+	}
+
+	return
 }
 
 // Removes a video from VIDEO_WORK
 // to show that the job is done.
-func DoneVideoID(videoID string) error {
-	return queue.LRem(videoWorkQueue, -1, videoID).Err()
+func DoneVideoIDs(videoID []string) error {
+	pipe := queue.Pipeline()
+	defer pipe.Close()
+	for _, id := range videoID {
+		pipe.LRem(videoWorkQueue, -1, id)
+	}
+	_, err := pipe.Exec()
+	return err
 }
 
 // Removes a video from VIDEO_WORK

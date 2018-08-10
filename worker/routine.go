@@ -52,9 +52,7 @@ func (c *workerContext) workRoutine() {
 		c.results <- result
 
 		if len(next) > 0 {
-			for _, id := range next {
-				c.newIDs <- id
-			}
+			c.newIDs <- next
 		}
 	}
 }

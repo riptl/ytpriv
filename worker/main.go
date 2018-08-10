@@ -35,19 +35,21 @@ func Run(ctxt context.Context) {
 	c.ctxt, cancelFunc = context.WithCancel(ctxt)
 
 	// Channels
-	chanSize := 2 * conf.BulkWriteSize
+	chanSize := 2 * conf.Connections
 	c.errors = make(chan error)
-	c.jobs = make(chan string, conf.BulkWriteSize)
+	c.jobBatches = make(chan []string, 2)
+	c.jobs = make(chan string, chanSize)
 	c.bulkSize = conf.BulkWriteSize
 	c.results = make(chan interface{}, chanSize)
-	c.newIDs = make(chan string, chanSize)
-	c.resultIDs = make(chan string, chanSize)
+	c.newIDs = make(chan []string, chanSize)
+	c.resultIDs = make(chan []string, chanSize)
 	c.failIDs = make(chan string, chanSize)
 	c.resultBatches = make(chan []data.Crawl, conf.Batches)
 	c.idle = make(chan bool)
 
 	// Redis handler
 	go c.handleQueueReceive()
+	go c.handleQueueReceiveHelper()
 	go c.handleQueueWrite()
 	// Result handler
 	go c.handleResults()

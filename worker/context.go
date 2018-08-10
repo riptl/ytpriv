@@ -13,6 +13,9 @@ type workerContext struct{
 	// an error
 	errors chan error
 
+	// New videos (as batches from Redis)
+	jobBatches chan []string
+
 	// New videos to process
 	jobs chan string
 
@@ -23,10 +26,10 @@ type workerContext struct{
 	results chan interface{}
 
 	// Newly found IDs
-	newIDs chan string
+	newIDs chan []string
 
 	// Crawl result IDs
-	resultIDs chan string
+	resultIDs chan []string
 
 	// Crawl fail IDs
 	failIDs chan string
