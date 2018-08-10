@@ -62,7 +62,7 @@ func testVideo(t *testing.T, a *api.API) {
 	formats := []string{"43", "18", "36", "17"}
 	assert.Equal(t, len(formats), len(v.Formats), "format count")
 	for i, fmt := range v.Formats {
-		assert.Equal(t, formats[i], fmt.ID, "format ID", i)
+		assert.Equal(t, formats[i], fmt, "format ID", i)
 	}
 }
 
