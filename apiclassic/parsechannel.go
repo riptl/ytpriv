@@ -52,10 +52,9 @@ func (p *parseChannelInfo) parseMetas() error {
 	return nil
 }
 
-func (p *parseChannelInfo) parseAbout() error {
+/*func (p *parseChannelInfo) parseAbout() error {
 	p.doc.Find(".about-stats").Find(".about-stat").Each(func(_ int, s *goquery.Selection) {
 		text := s.Text()
-		println(text)
 	})
 	return nil
-}
+}*/
