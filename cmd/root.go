@@ -21,7 +21,7 @@ var Root = cobra.Command{
 	Use:   "yt-mango",
 	Short: "YT-Mango is a scalable video metadata archiver",
 	Long: "YT-Mango is a scalable video metadata archiving utility\n" +
-		"written by terorie for https://the-eye.eu/",
+		"written by terorie",
 	PersistentPreRun: rootPreRun,
 }
 
