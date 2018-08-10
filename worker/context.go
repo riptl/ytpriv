@@ -31,9 +31,6 @@ type workerContext struct{
 	// Newly found IDs (as batches to Redis)
 	newIDsRaw chan []string
 
-	// Crawl result IDs
-	resultIDs chan []string
-
 	// Crawl fail IDs
 	failIDs chan string
 
@@ -44,4 +41,7 @@ type workerContext struct{
 	// Sent whenever the
 	// queue goes idle
 	idle chan bool
+
+	// Name of the crawler
+	foundBy string
 }

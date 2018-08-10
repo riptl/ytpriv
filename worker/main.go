@@ -14,6 +14,7 @@ const vpsInterval = 3
 
 func Run(ctxt context.Context) {
 	// Read config
+	viper.SetDefault("myname", "")
 	viper.SetDefault("connections", 32)
 	viper.SetDefault("batchsize", 16)
 	viper.SetDefault("batches", 4)
@@ -22,10 +23,15 @@ func Run(ctxt context.Context) {
 		Connections uint `viper:"connections,optional"`
 		BulkWriteSize uint `viper:"batchsize,optional"`
 		Batches uint `viper:"batches,optional"`
+		MyName string `viper:"myname,optional"`
 	}
 	err := viperstruct.ReadConfig(&conf)
 	if err != nil {
 		log.Error(err)
+		os.Exit(1)
+	}
+	if len(conf.MyName) > 10 {
+		log.Errorf("Name \"%s\" is longer than 10 bytes!")
 		os.Exit(1)
 	}
 
@@ -43,7 +49,6 @@ func Run(ctxt context.Context) {
 	c.results = make(chan interface{}, chanSize)
 	c.newIDs = make(chan []string, chanSize)
 	c.newIDsRaw = make(chan []string, 2)
-	c.resultIDs = make(chan []string, chanSize)
 	c.failIDs = make(chan string, chanSize)
 	c.resultBatches = make(chan []data.Crawl, conf.Batches)
 	c.idle = make(chan bool)

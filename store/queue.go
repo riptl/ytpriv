@@ -17,10 +17,6 @@ const videoSet = "VIDEO_SET"
 // to be crawled
 const videoWaitQueue = "VIDEO_WAIT"
 
-// List with VIDs that currently
-// are being crawled
-const videoWorkQueue = "VIDEO_WORK"
-
 var queue *redis.Client
 
 // Redis queue
@@ -107,7 +103,7 @@ func GetScheduledVideoIDs(count uint) (ids []string, err error) {
 
 	cmds := make([]*redis.StringCmd, count)
 	for i := uint(0); i < count; i++ {
-		cmds[i] = pipe.RPopLPush(videoWaitQueue, videoWorkQueue)
+		cmds[i] = pipe.RPop(videoWaitQueue)
 	}
 
 	// Errors get checked per command
@@ -132,22 +128,8 @@ func GetScheduledVideoIDs(count uint) (ids []string, err error) {
 }
 
 // Removes a video from VIDEO_WORK
-// to show that the job is done.
-func DoneVideoIDs(videoID []string) error {
-	pipe := queue.Pipeline()
-	defer pipe.Close()
-	for _, id := range videoID {
-		pipe.LRem(videoWorkQueue, -1, id)
-	}
-	_, err := pipe.Exec()
-	return err
-}
-
-// Removes a video from VIDEO_WORK
 // and places it into VIDEO_WAIT
 func FailedVideoID(videoID string) error {
-	if err := queue.LRem(videoWorkQueue, -1, videoID).Err();
-		err != nil { return err }
 	if err := queue.LPush(videoWaitQueue, videoID).Err();
 		err != nil { return err }
 	return nil

@@ -16,9 +16,6 @@ func (c *workerContext) handleQueueWrite() {
 		case <-c.ctxt.Done():
 			timeOut = time.After(1 * time.Second)
 
-		case ids := <-c.resultIDs:
-			c.queueResultIDs(ids)
-
 		case id := <-c.failIDs:
 			c.queueFailID(id)
 
@@ -52,14 +49,6 @@ func (c *workerContext) handleQueueWriteHelper() {
 			if pendingShutdown { return }
 			timeOut = time.After(1 * time.Second)
 	}}
-}
-
-func (c *workerContext) queueResultIDs(ids []string) {
-	err := store.DoneVideoIDs(ids)
-	if err != nil {
-		log.Errorf("Marking %d videos as done failed: %s", len(ids), err.Error())
-		c.errors <- err
-	}
 }
 
 func (c *workerContext) queueFailID(id string) {

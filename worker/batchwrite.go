@@ -16,13 +16,6 @@ func (c *workerContext) batchUploader() {
 			return
 
 		case batch := <-c.resultBatches:
-			// Mark IDs as done in Redis
-			resultIDs := make([]string, len(batch))
-			for i, r := range batch {
-				resultIDs[i] = r.Video.ID
-			}
-			c.resultIDs <- resultIDs
-
 			start := time.Now()
 			err := store.SubmitCrawls(batch)
 			dur := time.Since(start)
