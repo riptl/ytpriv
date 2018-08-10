@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/terorie/yt-mango/viperstruct"
 	"errors"
+	"time"
 )
 
 // Sorted set with VID as key and
@@ -25,12 +26,14 @@ func ConnectQueue() error {
 	viper.SetDefault("queue.network", "tcp")
 	viper.SetDefault("queue.host", "localhost:6379")
 	viper.SetDefault("queue.db", 0)
+	viper.SetDefault("queue.timeout", 10000)
 
 	var queueConf struct{
 		Network string `viper:"queue.network"`
 		Host string `viper:"queue.host"`
 		Pass string `viper:"queue.pass,optional"`
 		DB int `viper:"queue.db"`
+		Timeout uint `viper:"queue.timeout,optional"`
 	}
 
 	if err := viperstruct.ReadConfig(&queueConf);
@@ -41,6 +44,8 @@ func ConnectQueue() error {
 		Addr: queueConf.Host,
 		Password: queueConf.Pass,
 		DB: queueConf.DB,
+		ReadTimeout: time.Duration(queueConf.Timeout) * time.Millisecond,
+		WriteTimeout: time.Duration(queueConf.Timeout) * time.Millisecond,
 	})
 	if queue == nil { return errors.New("could not connect to Redis") }
 
@@ -56,6 +61,18 @@ func DisconnectQueue() {
 // Add a video ID to VIDEO_SET and to
 // VIDEO_WAIT if they are newly found
 func SubmitVideoIDs(ids []string) error {
+	for i := 0; i < len(ids); i += 256 {
+		start := i
+		end := i + 256
+		if end > len(ids) {
+			end = len(ids)
+		}
+		submitVideoIDsExec(ids[start:end])
+	}
+	return nil
+}
+
+func submitVideoIDsExec(ids []string) error {
 	// Pipeline for querying the status of video IDs
 	statusPipe := queue.Pipeline()
 	defer statusPipe.Close()
@@ -72,23 +89,25 @@ func SubmitVideoIDs(ids []string) error {
 	_, err := statusPipe.Exec()
 	if err != nil { return err }
 
-	// IDs that get written to VIDEO_WAIT
-	var newIDs []interface{}
+	// Pipeline for inserting IDs
+	idPipe := queue.Pipeline()
+	defer idPipe.Close()
 
 	// Check if IDs exist
 	for i, cmd := range statusCmds {
 		// New ID, add to wait queue
 		if cmd.Val() == 1 {
-			//log.WithField("vid", id).Debug("Found new video")
-			newIDs = append(newIDs, ids[i])
+			idPipe.LPush(videoWaitQueue, ids[i])
 		}
 	}
 
-	// New IDs, add to wait queue
-	queue.LPush(videoWaitQueue, newIDs...)
+	// Exec writes
+	_, err = idPipe.Exec()
+	if err != nil { return err }
 
 	return nil
 }
+
 
 // Moves a video from VIDEO_WAIT to VIDEO_WORK
 // Possible returns:

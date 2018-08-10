@@ -9,8 +9,6 @@ import (
 	"github.com/terorie/yt-mango/viperstruct"
 	"github.com/terorie/yt-mango/data"
 	"github.com/mongodb/mongo-go-driver/mongo/insertopt"
-	"github.com/mongodb/mongo-go-driver/mongo/clientopt"
-	"time"
 )
 
 var dbClient *mongo.Client
@@ -22,12 +20,10 @@ func ConnectMongo() error {
 	// Default config vars
 	viper.SetDefault("mongo.conn", "mongodb://127.0.0.1:27017")
 	viper.SetDefault("mongo.database", "yt-mango")
-	viper.SetDefault("mongo.timeout", 10000)
 
 	var mongoConf struct{
 		Conn   string `viper:"mongo.conn"`
 		DbName string `viper:"mongo.database"`
-		Timeout uint `viper:"mongo.timeout"`
 	}
 
 	// Read config
@@ -35,8 +31,7 @@ func ConnectMongo() error {
 	if err != nil { return err }
 
 	// Create mongo client
-	dbClient, err = mongo.NewClientWithOptions(mongoConf.Conn,
-		clientopt.SocketTimeout(time.Duration(mongoConf.Timeout) * time.Millisecond))
+	dbClient, err = mongo.NewClient(mongoConf.Conn)
 	if err != nil { return err }
 
 	ctxt := context.Background()
