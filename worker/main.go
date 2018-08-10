@@ -12,7 +12,7 @@ import (
 
 const vpsInterval = 3
 
-func Run(ctxt context.Context) {
+func Run(ctxt context.Context, firstId string) {
 	// Read config
 	viper.SetDefault("myname", "")
 	viper.SetDefault("connections", 32)
@@ -63,6 +63,11 @@ func Run(ctxt context.Context) {
 	go c.handleResults()
 	// Data uploader
 	go c.batchUploader()
+
+	if firstId != "" {
+		c.newIDsRaw <- []string{firstId}
+		log.Infof("Pushed first ID \"%s\".", firstId)
+	}
 
 	// Start workers
 	for i := uint(0); i < conf.Connections; i++ {

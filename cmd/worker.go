@@ -14,6 +14,7 @@ import (
 )
 
 var fatalErr = errors.New("fatal error, worker must stop")
+var firstId string
 
 var Worker = cobra.Command{
 	Use: "worker [config file]",
@@ -22,6 +23,12 @@ var Worker = cobra.Command{
 		"and upload it to a Mongo database.",
 	Args: cobra.MaximumNArgs(1),
 	Run: cmdFunc(doWork),
+}
+
+func init() {
+	Worker.Flags().StringVar(&firstId, "first-id", "",
+		"First video ID where crawling should begin.\n" +
+		"Has to be set if crawling is started on a new queue/database.")
 }
 
 func doWork(_ *cobra.Command, args []string) error {
@@ -43,7 +50,7 @@ func doWork(_ *cobra.Command, args []string) error {
 
 	ctxt, cancelFunc := context.WithCancel(context.Background())
 	watchExit(cancelFunc)
-	worker.Run(ctxt)
+	worker.Run(ctxt, firstId)
 
 	return nil
 }

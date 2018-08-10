@@ -15,6 +15,10 @@ job queue to manage tasks (uncrawled YouTube videos).
 The metadata of each video will be uploaded to a central
 [Mongo](https://www.mongodb.com/) database afterwards.
 
+While the job queue and DB are central, you can run
+as many workers as you want!
+Tested scaling up to ~2k video visits per second.
+
 The process basically consists of three steps and gets repeated possibly forever:
  1. Get a random video page from the job queue.
  2. Visit the video page, and extract info (title, description, etc.)
@@ -24,24 +28,29 @@ This is essentially a distributed
 [Breadth-First-Search](https://en.wikipedia.org/wiki/Breadth-first_search)
 on the entire YouTube page!
 
-Currently, _YT-Mango_ does not know how to find the first video
-and will just wait forever if the queue is empty. So you have to enter
-the first video ID into the Redis queue by hand for now. You can see
-this as a ceremony with ID "5Erj9y4D3iY" as an example:
-
+Test it out yourself!
+Mac:
 ```
-$ redis-cli
-localhost:6379> LPUSH VIDEO_WAIT "5Erj9y4D3iY"
+$ brew install redis mongo
+$ brew services launch redis mongo
+```
+
+Debian/Ubuntu: (mongodb-org 4.0 recommended!)
+```
+# apt install redis mongodb
+# systemctl start redis
+# systemctl start mongodb
 ```
 
 Then, start yt-mango: 
 ```
-$ yt-mango worker -a json config.yml
-2018/08/05 16:20:00 Visited 8ipj7FLS7FQ.
+$ yt-mango worker -a json config.yml --first-id 5Erj9y4D3iY
 ```
 
+![yt-mango worker output](doc/working.png)
+
 By default, yt-mango tries to connect to Redis and Mongo on localhost.
-This can be changed using a config file (example in `/example.yml`)
+This can be changed using a config file (example in `/example.yml`).
 
 ##### Project structure
 
