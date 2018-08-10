@@ -11,8 +11,8 @@ var Main *a.API = nil
 
 // TODO: Remove when everything is implemented
 var TempAPI = a.API{
-	GrabVideo: apiclassic.GrabVideo,
-	ParseVideo: apiclassic.ParseVideo,
+	GrabVideo: apijson.GrabVideo,
+	ParseVideo: apijson.ParseVideo,
 
 	GrabChannel: apiclassic.GrabChannel,
 	ParseChannel: apiclassic.ParseChannel,
