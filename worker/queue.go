@@ -9,17 +9,43 @@ import (
 // Queue handler:
 // Reads and writes to queue in the background
 
-func (c *workerContext) handleQueue() {
+// TODO Handle errors
+func (c *workerContext) handleQueueWrite() {
+	var timeOut <-chan time.Time
 	for { select {
 		case <-c.ctxt.Done():
-			c.handleQueueNoFetch(1 * time.Second)
-			return
+			timeOut = time.After(1 * time.Second)
 
 		case id := <-c.resultIDs:
-			store.DoneVideoID(id)
+			err := store.DoneVideoID(id)
+			if err != nil {
+				log.Errorf("Marking video \"%s\" as done failed: %s", id, err.Error())
+				c.errors <- err
+			}
 
 		case id := <-c.failIDs:
-			store.FailedVideoID(id)
+			err := store.FailedVideoID(id)
+			if err != nil {
+				log.Errorf("Marking video \"%s\" as failed failed: %s", id, err.Error())
+				c.errors <- err
+			}
+
+		case id := <-c.newIDs:
+			err := store.SubmitVideoID(id)
+			if err != nil {
+				log.Errorf("Pushing related video IDs of video \"%s\" failed: %s", id, err.Error())
+				c.errors <- err
+			}
+
+		case <-timeOut:
+			return
+	}}
+}
+
+func (c *workerContext) handleQueueReceive() {
+	for { select {
+		case <-c.ctxt.Done():
+			return
 
 		default:
 			videoId, err := store.GetScheduledVideoID()
@@ -30,23 +56,10 @@ func (c *workerContext) handleQueue() {
 			if videoId == "" {
 				// Queue is empty
 				log.Info("No jobs on queue. Waiting 1 second.")
-				c.handleQueueNoFetch(1 * time.Second)
+				time.Sleep(1 * time.Second)
+				continue
 			}
 
 			c.jobs <- videoId
-	}}
-}
-
-func (c *workerContext) handleQueueNoFetch(duration time.Duration) {
-	timeOut := time.After(duration)
-	for { select {
-		case id := <-c.resultIDs:
-			store.DoneVideoID(id)
-
-		case id := <-c.failIDs:
-			store.FailedVideoID(id)
-
-		case <-timeOut:
-			return
 	}}
 }

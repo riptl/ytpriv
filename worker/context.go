@@ -22,6 +22,9 @@ type workerContext struct{
 	// Crawl results (buffered)
 	results chan interface{}
 
+	// Newly found IDs
+	newIDs chan string
+
 	// Crawl result IDs
 	resultIDs chan string
 

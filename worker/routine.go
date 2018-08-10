@@ -7,7 +7,6 @@ import (
 	"github.com/terorie/yt-mango/net"
 	"github.com/terorie/yt-mango/data"
 	"github.com/terorie/yt-mango/api"
-	"github.com/terorie/yt-mango/store"
 )
 
 func (c *workerContext) workRoutine() {
@@ -53,10 +52,8 @@ func (c *workerContext) workRoutine() {
 		c.results <- result
 
 		if len(next) > 0 {
-			err = store.SubmitVideoIDs(next)
-			if err != nil {
-				log.Errorf("Pushing related video IDs of video \"%s\" failed: %s", videoId, err.Error())
-				c.errors <- err
+			for _, id := range next {
+				c.newIDs <- id
 			}
 		}
 	}

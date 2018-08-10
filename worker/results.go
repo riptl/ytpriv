@@ -34,10 +34,6 @@ func (c *workerContext) handleResults() {
 				resultBufPtr++
 				// Buffer full
 				if resultBufPtr == c.bulkSize || exitNow {
-					// Upload to Mongo
-					log.WithField("count", len(resultBuf)).
-						Info("Uploading batch of videos")
-
 					c.resultBatches <- resultBuf
 					resultBufPtr = 0
 				}

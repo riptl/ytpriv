@@ -15,11 +15,13 @@ const vpsInterval = 3
 func Run(ctxt context.Context) {
 	// Read config
 	viper.SetDefault("connections", 32)
-	viper.SetDefault("bulkwrite", 64)
+	viper.SetDefault("batchsize", 16)
+	viper.SetDefault("batches", 4)
 
 	var conf struct{
 		Connections uint `viper:"connections,optional"`
-		BulkWriteSize uint `viper:"bulkwrite,optional"`
+		BulkWriteSize uint `viper:"batchsize,optional"`
+		Batches uint `viper:"batches,optional"`
 	}
 	err := viperstruct.ReadConfig(&conf)
 	if err != nil {
@@ -33,17 +35,20 @@ func Run(ctxt context.Context) {
 	c.ctxt, cancelFunc = context.WithCancel(ctxt)
 
 	// Channels
+	chanSize := 2 * conf.BulkWriteSize
 	c.errors = make(chan error)
-	c.jobs = make(chan string)
+	c.jobs = make(chan string, conf.BulkWriteSize)
 	c.bulkSize = conf.BulkWriteSize
-	c.results = make(chan interface{}, 2 * conf.BulkWriteSize)
-	c.resultIDs = make(chan string, 2 * conf.BulkWriteSize)
-	c.failIDs = make(chan string)
-	c.resultBatches = make(chan []data.Crawl)
+	c.results = make(chan interface{}, chanSize)
+	c.newIDs = make(chan string, chanSize)
+	c.resultIDs = make(chan string, chanSize)
+	c.failIDs = make(chan string, chanSize)
+	c.resultBatches = make(chan []data.Crawl, conf.Batches)
 	c.idle = make(chan bool)
 
 	// Redis handler
-	go c.handleQueue()
+	go c.handleQueueReceive()
+	go c.handleQueueWrite()
 	// Result handler
 	go c.handleResults()
 	// Data uploader

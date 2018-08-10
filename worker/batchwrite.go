@@ -21,7 +21,15 @@ func (c *workerContext) batchUploader() {
 				c.resultIDs <- vid.Video.ID
 			}
 
+			start := time.Now()
 			err := store.SubmitCrawls(batch)
+			dur := time.Since(start)
+
+			// Upload to Mongo
+			log.WithField("count", len(batch)).
+				WithField("time", dur).
+				Info("Uploaded batch of videos")
+
 			if err != nil {
 				log.Errorf("Uploading crawl of %d videos failed: %s", len(batch), err.Error())
 				c.errors <- err

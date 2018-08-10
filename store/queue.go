@@ -58,20 +58,18 @@ func DisconnectQueue() {
 	}
 }
 
-// Adds video IDs to VIDEO_SET and to
+// Add a video ID to VIDEO_SET and to
 // VIDEO_WAIT if they are newly found
-func SubmitVideoIDs(ids []string) error {
-	for _, id := range ids {
-		// Check against the sorted set
-		numAdded, err := queue.ZAdd(videoSet, redis.Z{float64(time.Now().Unix()), id}).Result()
-		if err != nil { return err }
+func SubmitVideoID(id string) error {
+	// Check against the sorted set
+	numAdded, err := queue.ZAdd(videoSet, redis.Z{float64(time.Now().Unix()), id}).Result()
+	if err != nil { return err }
 
-		// New ID, add to wait queue
-		if numAdded == 1 {
-			log.WithField("vid", id).Debug("Found new video")
-			if err := queue.LPush(videoWaitQueue, id).Err();
-				err != nil { return err }
-		}
+	// New ID, add to wait queue
+	if numAdded == 1 {
+		//log.WithField("vid", id).Debug("Found new video")
+		if err := queue.LPush(videoWaitQueue, id).Err();
+			err != nil { return err }
 	}
 	return nil
 }
