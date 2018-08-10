@@ -2,7 +2,6 @@ package store
 
 import (
 	log "github.com/sirupsen/logrus"
-	"time"
 	"github.com/go-redis/redis"
 	"github.com/spf13/viper"
 	"github.com/terorie/yt-mango/viperstruct"
@@ -11,7 +10,7 @@ import (
 
 // Sorted set with VID as key and
 // last crawl time (Unix) as score
-const videoSet = "VIDEO_SET"
+const videoSet = "VIDEO_USET"
 
 // List with VIDs that are scheduled
 // to be crawled
@@ -66,8 +65,7 @@ func SubmitVideoIDs(ids []string) error {
 
 	// Queue writes
 	for i, id := range ids {
-		statusCmds[i] = statusPipe.
-			ZAdd(videoSet, redis.Z{float64(time.Now().Unix()), id})
+		statusCmds[i] = statusPipe.SAdd(videoSet, id)
 	}
 
 	// Exec writes
@@ -134,5 +132,3 @@ func FailedVideoID(videoID string) error {
 		err != nil { return err }
 	return nil
 }
-
-// TODO Recrawl oldest video IDs with "ZPOPMIN VIDEO_SET" & ZADD VIDEO_SET" & "LPUSH VIDEO_WAIT"
