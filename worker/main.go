@@ -37,11 +37,12 @@ func Run(ctxt context.Context) {
 	// Channels
 	chanSize := 2 * conf.Connections
 	c.errors = make(chan error)
-	c.jobBatches = make(chan []string, 2)
+	c.jobsRaw = make(chan []string, 2)
 	c.jobs = make(chan string, chanSize)
 	c.bulkSize = conf.BulkWriteSize
 	c.results = make(chan interface{}, chanSize)
 	c.newIDs = make(chan []string, chanSize)
+	c.newIDsRaw = make(chan []string, 2)
 	c.resultIDs = make(chan []string, chanSize)
 	c.failIDs = make(chan string, chanSize)
 	c.resultBatches = make(chan []data.Crawl, conf.Batches)
@@ -51,6 +52,7 @@ func Run(ctxt context.Context) {
 	go c.handleQueueReceive()
 	go c.handleQueueReceiveHelper()
 	go c.handleQueueWrite()
+	go c.handleQueueWriteHelper()
 	// Result handler
 	go c.handleResults()
 	// Data uploader

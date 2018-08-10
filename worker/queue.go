@@ -22,11 +22,35 @@ func (c *workerContext) handleQueueWrite() {
 		case id := <-c.failIDs:
 			c.queueFailID(id)
 
-		case ids := <-c.newIDs:
+		case ids := <-c.newIDsRaw:
 			c.queueNewIDs(ids)
 
 		case <-timeOut:
 			return
+	}}
+}
+
+// Packs batches of new video IDs from
+// "newIDs" to "newIDsRaw".
+// Sends the new IDs to Redis every second.
+func (c *workerContext) handleQueueWriteHelper() {
+	pendingShutdown := false
+
+	timeOut := time.After(1 * time.Second)
+	var idBuf []string
+
+	for { select {
+		case <-c.ctxt.Done():
+			pendingShutdown = true
+
+		case ids := <-c.newIDs:
+			idBuf = append(idBuf, ids...)
+
+		case <-timeOut:
+			c.newIDsRaw <- idBuf
+			idBuf = nil
+			if pendingShutdown { return }
+			timeOut = time.After(1 * time.Second)
 	}}
 }
 
@@ -54,12 +78,14 @@ func (c *workerContext) queueNewIDs(ids []string) {
 	}
 }
 
+// Unpacks batches of new jobs from
+// "jobsRaw" to "jobs"
 func (c *workerContext) handleQueueReceiveHelper() {
 	for { select {
 		case <-c.ctxt.Done():
 			return
 
-		case batch := <-c.jobBatches:
+		case batch := <-c.jobsRaw:
 			for _, id := range batch {
 				c.jobs <- id
 			}
@@ -83,6 +109,6 @@ func (c *workerContext) handleQueueReceive() {
 				time.Sleep(1 * time.Second)
 				continue
 			}
-			c.jobBatches <- ids
+			c.jobsRaw <- ids
 	}}
 }
