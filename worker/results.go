@@ -8,33 +8,39 @@ import (
 
 // Collect results from wc.results,
 // write batches to Redis and Mongo
-func (c *workerContext) handleResults() {
-	resultBuf := make([]data.Crawl, c.bulkSize)
+func handleResults(
+		bulkSize uint,
+		results <-chan interface{},
+		resultBatches chan<- []data.Crawl,
+		failIDs chan<- string) {
+	resultBuf := make([]data.Crawl, bulkSize)
 	resultBufPtr := uint(0)
-	exitNow := false
 
 	// Videos per second timer
 	var videosLastInterval = 0
 	var vpsTimer = time.After(vpsInterval * time.Second)
 
 	for { select{
-		case <-c.ctxt.Done():
-			exitNow = true
+		case result, more := <-results:
+			// No more new results
+			if !more {
+				resultBatches <- resultBuf
+				close(resultBatches)
+				return
+			}
 
-		case result := <-c.results:
 			switch result.(type) {
 			case data.Crawl:
 				vid := result.(data.Crawl)
 
 				// Log info
-				log.WithField("vid", vid.Video.ID).Debug("Visited video")
 				videosLastInterval++
 
 				resultBuf[resultBufPtr] = vid
 				resultBufPtr++
 				// Buffer full
-				if resultBufPtr == c.bulkSize || exitNow {
-					c.resultBatches <- resultBuf
+				if resultBufPtr == bulkSize {
+					resultBatches <- resultBuf
 					resultBufPtr = 0
 				}
 			case data.CrawlError:
@@ -44,7 +50,7 @@ func (c *workerContext) handleResults() {
 				log.Errorf("Marking video \"%s\" as done failed: %s",
 					ce.VideoId, ce.Err.Error())
 
-				c.failIDs <- ce.VideoId
+				failIDs <- ce.VideoId
 			}
 
 		// Print videos per second

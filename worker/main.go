@@ -12,7 +12,7 @@ import (
 
 const vpsInterval = 3
 
-func Run(ctxt context.Context, firstId string) {
+func Run(rootCtxt context.Context, firstId string) {
 	// Read config
 	viper.SetDefault("myname", "")
 	viper.SetDefault("connections", 32)
@@ -35,43 +35,44 @@ func Run(ctxt context.Context, firstId string) {
 		os.Exit(1)
 	}
 
-	var c workerContext
-	c.foundBy = conf.MyName
-
 	var cancelFunc context.CancelFunc
-	c.ctxt, cancelFunc = context.WithCancel(ctxt)
+	ctxt, cancelFunc := context.WithCancel(rootCtxt)
 
 	// Channels
 	chanSize := 2 * conf.Connections
-	c.errors = make(chan error)
-	c.jobsRaw = make(chan []string, 2)
-	c.jobs = make(chan string, chanSize)
-	c.bulkSize = conf.BulkWriteSize
-	c.results = make(chan interface{}, chanSize)
-	c.newIDs = make(chan []string, chanSize)
-	c.newIDsRaw = make(chan []string, 2)
-	c.failIDs = make(chan string, chanSize)
-	c.resultBatches = make(chan []data.Crawl, conf.Batches)
-	c.idle = make(chan bool)
+	errors := make(chan error)
+	bulkSize := conf.BulkWriteSize
+	results := make(chan interface{}, chanSize)
+	resultBatches := make(chan []data.Crawl, conf.Batches)
 
-	// Redis handler
-	go c.handleQueueReceive()
-	go c.handleQueueReceiveHelper()
-	go c.handleQueueWrite()
-	go c.handleQueueWriteHelper()
+	// Receive jobs
+	jobsRaw := make(chan []string, 2)
+	jobs := make(chan string, chanSize)
+	go handleQueueReceive(ctxt, bulkSize, jobsRaw, errors)
+	go handleQueueReceiveHelper(jobsRaw, jobs)
+
+	// Write results
+	newIDs := make(chan []string, chanSize)
+	newIDsRaw := make(chan []string, 2)
+	failIDs := make(chan string, chanSize)
+	go handleQueueWrite(newIDsRaw, failIDs, errors)
+	go handleQueueWriteHelper(newIDs, newIDsRaw)
+
 	// Result handler
-	go c.handleResults()
+	go handleResults(conf.BulkWriteSize, results, resultBatches, failIDs)
 	// Data uploader
-	go c.batchUploader()
+	go batchUploader(resultBatches, errors)
 
 	if firstId != "" {
-		c.newIDsRaw <- []string{firstId}
+		newIDsRaw <- []string{firstId}
 		log.Infof("Pushed first ID \"%s\".", firstId)
 	}
 
 	// Start workers
+	activeRoutines := conf.Connections
+	onExit := make(chan struct{})
 	for i := uint(0); i < conf.Connections; i++ {
-		go c.workRoutine()
+		go workRoutine(conf.MyName, jobs, results, newIDs, errors, onExit)
 	}
 
 	// Count errors
@@ -83,8 +84,16 @@ func Run(ctxt context.Context, firstId string) {
 			log.Info("Requested cancellation.")
 			return
 
+		// Worker routine exited
+		case <-onExit:
+			activeRoutines--
+			if activeRoutines == 0 {
+				// No results available anymore
+				close(results)
+			}
+
 		// Rescan and drop old errors
-		case <-c.errors:
+		case <-errors:
 			var newErrorTimes []time.Time
 			for _, t := range errorTimes {
 				if t.Sub(time.Now()) < 5 * time.Second {

@@ -9,22 +9,28 @@ import (
 	"github.com/terorie/yt-mango/api"
 )
 
-func (c *workerContext) workRoutine() {
+func workRoutine(
+		crawlerName string,
+		jobs <-chan string,
+		results chan<- interface{},
+		newIDs chan<- []string,
+		errors chan<- error,
+		notifyShutdown chan<- struct{}) {
 	for {
-		// Check if routine should exit
-		select {
-			case <-c.ctxt.Done(): break
-			default:
+		// TODO Move video back to wait queue if processing failed
+		videoId, more := <-jobs
+
+		// No jobs, channel closed
+		if !more {
+			notifyShutdown <- struct{}{}
+			return
 		}
 
-		// TODO Move video back to wait queue if processing failed
-
-		videoId := <-c.jobs
 		req := apis.Main.GrabVideo(videoId)
 		res, err := net.Client.Do(req)
 		if err != nil {
 			log.Errorf("Failed to download video \"%s\": %s", videoId, err.Error())
-			c.errors <- err
+			errors <- err
 		}
 
 		var v data.Video
@@ -41,19 +47,19 @@ func (c *workerContext) workRoutine() {
 			}
 		} else if err != nil {
 			log.Errorf("Parsing video \"%s\" failed: %s", videoId, err.Error())
-			c.errors <- err
+			errors <- err
 		} else {
 			result = data.Crawl{
 				Video: &v,
 				VisitedTime: time.Now(),
-				CrawlerName: c.foundBy,
+				CrawlerName: crawlerName,
 			}
 		}
 
-		c.results <- result
+		results <- result
 
 		if len(next) > 0 {
-			c.newIDs <- next
+			newIDs <- next
 		}
 	}
 }

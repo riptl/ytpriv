@@ -4,100 +4,112 @@ import (
 	"github.com/terorie/yt-mango/store"
 	log "github.com/sirupsen/logrus"
 	"time"
+	"context"
 )
 
 // Queue handler:
 // Reads and writes to queue in the background
 
 // TODO Handle errors
-func (c *workerContext) handleQueueWrite() {
-	var timeOut <-chan time.Time
+func handleQueueWrite(
+		newIDsRaw <-chan []string,
+		failIDs <-chan string,
+		errors chan<- error) {
 	for { select {
-		case <-c.ctxt.Done():
-			timeOut = time.After(1 * time.Second)
+		case id := <-failIDs:
+			err := store.FailedVideoID(id)
+			if err != nil {
+				log.Errorf("Marking video \"%s\" as failed failed: %s", id, err.Error())
+				errors <- err
+			}
 
-		case id := <-c.failIDs:
-			c.queueFailID(id)
-
-		case ids := <-c.newIDsRaw:
-			c.queueNewIDs(ids)
-
-		case <-timeOut:
-			return
+		case ids, more := <-newIDsRaw:
+			if !more { return }
+			err := store.SubmitVideoIDs(ids)
+			if err != nil {
+				log.Errorf("Pushing %d related video IDs failed: %s", len(ids), err.Error())
+				errors <- err
+			}
 	}}
 }
 
 // Packs batches of new video IDs from
 // "newIDs" to "newIDsRaw".
 // Sends the new IDs to Redis every second.
-func (c *workerContext) handleQueueWriteHelper() {
-	pendingShutdown := false
-
-	timeOut := time.After(1 * time.Second)
+func handleQueueWriteHelper(newIDs <-chan []string, newIDsRaw chan<- []string) {
 	var idBuf []string
+	var lastPersist time.Time
 
-	for { select {
-		case <-c.ctxt.Done():
-			pendingShutdown = true
+	for {
+		ids, more := <-newIDs
 
-		case ids := <-c.newIDs:
-			idBuf = append(idBuf, ids...)
+		// Upload the last batch and exit
+		if !more {
+			newIDsRaw <- idBuf
+			return
+		}
 
-		case <-timeOut:
-			c.newIDsRaw <- idBuf
+		// Last upload too long ago
+		// Upload next IDs
+		if time.Since(lastPersist) > 1 * time.Second {
+			newIDsRaw <- idBuf
 			idBuf = nil
-			if pendingShutdown { return }
-			timeOut = time.After(1 * time.Second)
-	}}
-}
+			lastPersist = time.Now()
+		}
 
-func (c *workerContext) queueFailID(id string) {
-	err := store.FailedVideoID(id)
-	if err != nil {
-		log.Errorf("Marking video \"%s\" as failed failed: %s", id, err.Error())
-		c.errors <- err
-	}
-}
-
-func (c *workerContext) queueNewIDs(ids []string) {
-	err := store.SubmitVideoIDs(ids)
-	if err != nil {
-		log.Errorf("Pushing %d related video IDs failed: %s", len(ids), err.Error())
-		c.errors <- err
+		idBuf = append(idBuf, ids...)
 	}
 }
 
 // Unpacks batches of new jobs from
 // "jobsRaw" to "jobs"
-func (c *workerContext) handleQueueReceiveHelper() {
-	for { select {
-		case <-c.ctxt.Done():
-			return
-
-		case batch := <-c.jobsRaw:
-			for _, id := range batch {
-				c.jobs <- id
-			}
-	}}
+func handleQueueReceiveHelper(jobsRaw <-chan []string, jobs chan<- string) {
+	for {
+		batch, more := <-jobsRaw
+		if !more { return }
+		for _, id := range batch {
+			jobs <- id
+		}
+	}
 }
 
-func (c *workerContext) handleQueueReceive() {
-	for { select {
-		case <-c.ctxt.Done():
+func handleQueueReceive(
+		ctxt context.Context,
+		bulkSize uint,
+		jobsRaw chan<- []string,
+		errors chan<- error) {
+	for {
+		select {
+		case <-ctxt.Done():
+			// Stop signal received, no more jobs
+			close(jobsRaw)
 			return
-
 		default:
-			ids, err := store.GetScheduledVideoIDs(c.bulkSize)
-			if err != nil && err.Error() != "redis: nil" {
-				log.Error("Queue error: ", err.Error())
-				c.errors <- err
-			}
-			if len(ids) == 0 {
-				// Queue is empty
-				log.Info("No jobs on queue. Waiting 1 second.")
-				time.Sleep(1 * time.Second)
-				continue
-			}
-			c.jobsRaw <- ids
-	}}
+		}
+
+		// Request videos from Redis with time
+		start := time.Now()
+		ids, err := store.GetScheduledVideoIDs(bulkSize)
+		dur := time.Since(start)
+
+		// Redis error or no results
+		if err != nil && err.Error() != "redis: nil" {
+			log.Error("Queue error: ", err.Error())
+			errors <- err
+		}
+
+		// Queue is empty
+		if len(ids) == 0 {
+			log.Info("No jobs on queue. Waiting 1 second.")
+			time.Sleep(1 * time.Second)
+			continue
+		}
+
+		// Log receive
+		log.WithField("count", len(ids)).
+			WithField("time", dur).
+			Debug("Received batch of jobs")
+
+		jobsRaw <- ids
+	}
 }
