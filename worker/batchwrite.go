@@ -5,16 +5,23 @@ import (
 	"time"
 	"github.com/terorie/yt-mango/store"
 	log "github.com/sirupsen/logrus"
+	"sync"
 )
 
 // Uploads batches to Mongo
 
-func batchUploader(
+func uploadResults(
 		resultBatches <-chan []data.Crawl,
-		errors chan<- error) {
+		errors chan<- error,
+		exit sync.WaitGroup) {
+	exit.Add(1)
+
 	for {
 		batch, more := <-resultBatches
-		if !more { return }
+		if !more {
+			exit.Done()
+			return
+		}
 
 		start := time.Now()
 		err := store.SubmitCrawls(batch)

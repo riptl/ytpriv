@@ -5,16 +5,23 @@ import (
 	log "github.com/sirupsen/logrus"
 	"time"
 	"context"
+	"sync"
 )
 
-// Queue handler:
-// Reads and writes to queue in the background
-
-// TODO Handle errors
-func handleQueueWrite(
-		newIDsRaw <-chan []string,
+// Writes newly found video IDs ("newIDs") and
+// failed jobs ("failIDs") to the Redis queue.
+// Results from "newIDs" are buffered and
+// uploaded with "uploadNewVideoIDs"
+func writeToQueue(
+		newIDs <-chan []string,
 		failIDs <-chan string,
-		errors chan<- error) {
+		errors chan<- error,
+		exit sync.WaitGroup) {
+	exit.Add(1)
+
+	var currentBatch []string
+	var uploadTicker = time.NewTicker(1 * time.Second).C
+
 	for { select {
 		case id := <-failIDs:
 			err := store.FailedVideoID(id)
@@ -23,49 +30,45 @@ func handleQueueWrite(
 				errors <- err
 			}
 
-		case ids, more := <-newIDsRaw:
-			if !more { return }
-			err := store.SubmitVideoIDs(ids)
-			if err != nil {
-				log.Errorf("Pushing %d related video IDs failed: %s", len(ids), err.Error())
-				errors <- err
+		case <-uploadTicker:
+			if len(currentBatch) > 0 {
+				uploadNewVideoIDs(currentBatch, errors)
+				currentBatch = nil
 			}
+
+		case ids, more := <-newIDs:
+			// Upload the last batch and exit
+			if !more {
+				uploadNewVideoIDs(currentBatch, errors)
+				exit.Done()
+				return
+			}
+
+			// Add the new IDs to the next batch
+			currentBatch = append(currentBatch, ids...)
 	}}
 }
 
-// Packs batches of new video IDs from
-// "newIDs" to "newIDsRaw".
-// Sends the new IDs to Redis every second.
-func handleQueueWriteHelper(newIDs <-chan []string, newIDsRaw chan<- []string) {
-	var idBuf []string
-	var lastPersist time.Time
+// Uploads a batch of newly found IDs without buffering
+func uploadNewVideoIDs(ids []string, errors chan<- error) {
+	now := time.Now()
+	err := store.SubmitVideoIDs(ids)
+	dur := time.Since(now)
 
-	for {
-		ids, more := <-newIDs
+	log.WithField("count", len(ids)).
+		WithField("time", dur).
+		Debug("Uploaded batch of found video IDs")
 
-		// Upload the last batch and exit
-		if !more {
-			newIDsRaw <- idBuf
-			return
-		}
-
-		// Last upload too long ago
-		// Upload next IDs
-		if time.Since(lastPersist) > 1 * time.Second {
-			newIDsRaw <- idBuf
-			idBuf = nil
-			lastPersist = time.Now()
-		}
-
-		idBuf = append(idBuf, ids...)
+	if err != nil {
+		log.Errorf("Pushing %d related video IDs failed: %s", len(ids), err.Error())
+		errors <- err
 	}
 }
 
-// Unpacks batches of new jobs from
-// "jobsRaw" to "jobs"
-func handleQueueReceiveHelper(jobsRaw <-chan []string, jobs chan<- string) {
+// Unpacks batches of new jobs from "batches to "jobs"
+func unpackJobBatches(batches <-chan []string, jobs chan<- string) {
 	for {
-		batch, more := <-jobsRaw
+		batch, more := <-batches
 		if !more { return }
 		for _, id := range batch {
 			jobs <- id
@@ -73,9 +76,12 @@ func handleQueueReceiveHelper(jobsRaw <-chan []string, jobs chan<- string) {
 	}
 }
 
-func handleQueueReceive(
+// Loads batches of new jobs to "jobsRaw" with size
+// "batchSize". If the context is Done(), the "jobsRaw"
+// channel is closed, causing the whole pipeline to stop.
+func loadNewJobs(
 		ctxt context.Context,
-		bulkSize uint,
+		batchSize uint,
 		jobsRaw chan<- []string,
 		errors chan<- error) {
 	for {
@@ -89,7 +95,7 @@ func handleQueueReceive(
 
 		// Request videos from Redis with time
 		start := time.Now()
-		ids, err := store.GetScheduledVideoIDs(bulkSize)
+		ids, err := store.GetScheduledVideoIDs(batchSize)
 		dur := time.Since(start)
 
 		// Redis error or no results

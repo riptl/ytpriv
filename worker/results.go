@@ -7,8 +7,8 @@ import (
 )
 
 // Collect results from wc.results,
-// write batches to Redis and Mongo
-func handleResults(
+// write batches to Mongo
+func collectResults(
 		bulkSize uint,
 		results <-chan interface{},
 		resultBatches chan<- []data.Crawl,
@@ -17,8 +17,9 @@ func handleResults(
 	resultBufPtr := uint(0)
 
 	// Videos per second timer
-	var videosLastInterval = 0
-	var vpsTimer = time.After(vpsInterval * time.Second)
+	totalVideoCount := uint(0)
+	videosLastInterval := uint(0)
+	vpsTicker := time.NewTicker(vpsInterval * time.Second).C
 
 	for { select{
 		case result, more := <-results:
@@ -54,11 +55,11 @@ func handleResults(
 			}
 
 		// Print videos per second
-		case <-vpsTimer:
-			log.WithField("vps", videosLastInterval / vpsInterval).
-				Info("Videos per second")
+		case <-vpsTicker:
+			totalVideoCount += videosLastInterval
+			log.WithField("perSecond", videosLastInterval / vpsInterval).
+				WithField("total", totalVideoCount).
+				Info("Got new videos")
 			videosLastInterval = 0
-			// Respawn timer
-			vpsTimer = time.After(vpsInterval * time.Second)
 	}}
 }

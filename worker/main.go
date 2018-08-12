@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/terorie/yt-mango/data"
 	"github.com/terorie/yt-mango/viperstruct"
+	"sync"
 )
 
 const vpsInterval = 3
@@ -16,7 +17,7 @@ func Run(rootCtxt context.Context, firstId string) {
 	// Read config
 	viper.SetDefault("myname", "")
 	viper.SetDefault("connections", 32)
-	viper.SetDefault("batchsize", 16)
+	viper.SetDefault("batchsize", 64)
 	viper.SetDefault("batches", 4)
 
 	var conf struct{
@@ -48,23 +49,21 @@ func Run(rootCtxt context.Context, firstId string) {
 	// Receive jobs
 	jobsRaw := make(chan []string, 2)
 	jobs := make(chan string, chanSize)
-	go handleQueueReceive(ctxt, bulkSize, jobsRaw, errors)
-	go handleQueueReceiveHelper(jobsRaw, jobs)
+	go loadNewJobs(ctxt, bulkSize, jobsRaw, errors)
+	go unpackJobBatches(jobsRaw, jobs)
 
 	// Write results
 	newIDs := make(chan []string, chanSize)
-	newIDsRaw := make(chan []string, 2)
 	failIDs := make(chan string, chanSize)
-	go handleQueueWrite(newIDsRaw, failIDs, errors)
-	go handleQueueWriteHelper(newIDs, newIDsRaw)
+	exitGroup := sync.WaitGroup{}
+	go writeToQueue(newIDs, failIDs, errors, exitGroup)
+	go uploadResults(resultBatches, errors, exitGroup)
 
-	// Result handler
-	go handleResults(conf.BulkWriteSize, results, resultBatches, failIDs)
-	// Data uploader
-	go batchUploader(resultBatches, errors)
+	// Collect results from the workers
+	go collectResults(conf.BulkWriteSize, results, resultBatches, failIDs)
 
 	if firstId != "" {
-		newIDsRaw <- []string{firstId}
+		newIDs <- []string{firstId}
 		log.Infof("Pushed first ID \"%s\".", firstId)
 	}
 
@@ -81,7 +80,11 @@ func Run(rootCtxt context.Context, firstId string) {
 	// Collect info from routines
 	for { select {
 		case <-ctxt.Done():
-			log.Info("Requested cancellation.")
+			log.Info("Cancelling …")
+
+			// Wait for write goroutines to exit
+			exitGroup.Wait()
+
 			return
 
 		// Worker routine exited
