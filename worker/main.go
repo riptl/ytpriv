@@ -7,7 +7,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"github.com/terorie/yt-mango/data"
-	"github.com/terorie/yt-mango/viperstruct"
+	"github.com/terorie/viperstruct"
 	"sync"
 )
 
