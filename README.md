@@ -1,5 +1,6 @@
 # WIP: yt-mango 💾
 
+![build status](https://travis-ci.org/terorie/yt-mango.svg?branch=master)
 > YT metadata extractor inspired by [`youtube-ma` by _CorentinB_][youtube-ma]
 
 ##### Get it
