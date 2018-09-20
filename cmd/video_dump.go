@@ -22,7 +22,7 @@ var videoDumpCmd = cobra.Command{
 	Long: "Loads n video metadata files to the\n" +
 		"specified path starting at the root video.\n" +
 		"The videos are saved as \"<video_id>.json\".",
-	Args: cobra.ExactArgs(3),
+	Args: cobra.MinimumNArgs(3),
 	Run: cmdFunc(doVideoDump),
 }
 
@@ -39,7 +39,7 @@ type videoDump struct{
 func doVideoDump(_ *cobra.Command, args []string) (err error) {
 	nStr := args[0]
 	path := args[1]
-	firstID := args[2]
+	startIDs := args[2:]
 
 	toFindUint64, err := strconv.ParseUint(nStr, 10, 31)
 	if err != nil { return }
@@ -47,20 +47,17 @@ func doVideoDump(_ *cobra.Command, args []string) (err error) {
 	err = os.Mkdir(path, 0755)
 	if err != nil { return }
 
-	firstID, err = api.GetVideoID(firstID)
-	if err != nil { return }
+	for i, url := range startIDs {
+		startIDs[i], err = api.GetVideoID(url)
+		if err != nil { return }
+	}
 
 	d := videoDump{
 		path:     path,
 		left:     int32(toFindUint64),
-		queue:    []string{firstID},
+		queue:    startIDs,
 		foundAll: 0,
 	}
-
-	// Insert first video ID into buffer
-	d.queueLock.Lock()
-	d.queue = []string{firstID}
-	d.queueLock.Unlock()
 
 	// Spawn workers
 	for i := 0; i < int(net.MaxWorkers); i++ {
