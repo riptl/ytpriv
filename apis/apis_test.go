@@ -31,9 +31,9 @@ func testVideo(t *testing.T, a *api.API) {
 
 	var v data.Video
 	v.ID = "uOXLKPCs54c"
-	recm, err := a.ParseVideo(&v, res)
+	err = a.ParseVideo(&v, res)
 	if err != nil { assert.FailNow(t, err.Error()) }
-	assert.NotZero(t, len(recm), "No recommendations")
+	assert.NotZero(t, len(v.Related), "No recommendations")
 
 	assert.Equal(t, "https://www.youtube.com/watch?v=uOXLKPCs54c", v.URL)
 	assert.Equal(t, 2013, v.UploadDate.Year())
@@ -76,7 +76,7 @@ func testVideoDeleted(t *testing.T, a *api.API) {
 	}
 
 	v := data.Video{ID: "chGl0_nFyqg"}
-	_, err = a.ParseVideo(&v, res)
+	err = a.ParseVideo(&v, res)
 	if err == nil {
 		assert.FailNow(t, "no error on unavailable video")
 	} else if err != api.VideoUnavailable {
@@ -93,7 +93,7 @@ func testVideoRestricted(t *testing.T, a *api.API) {
 
 	v := data.Video{ID: "6kLq3WMV1nU"}
 	// Age-restricted vids don't have recommendations
-	_, err = a.ParseVideo(&v, res)
+	err = a.ParseVideo(&v, res)
 	if err != nil { assert.FailNow(t, err.Error()) }
 
 	assert.Equal(t, "Dedication To My Ex (Miss That) (Lyric Video)", v.Title)
@@ -134,7 +134,7 @@ func testVideoDescription(t *testing.T, a *api.API) {
 	if err != nil { assert.FailNow(t, err.Error()) }
 
 	v := data.Video{ID: "kj9mFK62c6E"}
-	_, err = a.ParseVideo(&v, res)
+	err = a.ParseVideo(&v, res)
 	if err != nil { assert.FailNow(t, err.Error()) }
 
 	const descTest4start =
@@ -170,7 +170,7 @@ func testVideoUnlisted(t *testing.T, a *api.API) {
 	if err != nil { assert.FailNow(t, err.Error()) }
 
 	v := data.Video{ID: "RD5otQyBFqc"}
-	_, err = a.ParseVideo(&v, res)
+	err = a.ParseVideo(&v, res)
 	if err != nil { assert.FailNow(t, err.Error()) }
 
 	assert.Equal(t, "How Northern Lights Are Created", v.Title)
