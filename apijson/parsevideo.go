@@ -1,16 +1,16 @@
 package apijson
 
 import (
-	"github.com/valyala/fastjson"
-	"github.com/terorie/yt-mango/data"
 	"errors"
+	"github.com/terorie/yt-mango/api"
+	"github.com/terorie/yt-mango/data"
+	"github.com/valyala/fastjson"
 	"io/ioutil"
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
-	"regexp"
-	"github.com/terorie/yt-mango/api"
 )
 
 var matchThumbUrl = regexp.MustCompile("^.+/hqdefault\\.jpg")

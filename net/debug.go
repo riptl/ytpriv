@@ -1,12 +1,12 @@
 package net
 
 import (
-	"net/http"
-	"os"
 	"bufio"
 	"encoding/base64"
-	"io/ioutil"
 	"encoding/json"
+	"io/ioutil"
+	"net/http"
+	"os"
 )
 
 type DebugTransport struct{

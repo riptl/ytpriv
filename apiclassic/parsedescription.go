@@ -1,11 +1,11 @@
 package apiclassic
 
 import (
-	"errors"
-	"golang.org/x/net/html"
 	"bytes"
-	"strings"
+	"errors"
 	"github.com/terorie/yt-mango/api"
+	"golang.org/x/net/html"
+	"strings"
 )
 
 const descriptionSelector = "#eow-description"

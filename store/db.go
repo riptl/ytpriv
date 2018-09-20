@@ -3,12 +3,12 @@ package store
 import (
 	"context"
 	"errors"
+	"github.com/mongodb/mongo-go-driver/mongo"
+	"github.com/mongodb/mongo-go-driver/mongo/insertopt"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"github.com/mongodb/mongo-go-driver/mongo"
 	"github.com/terorie/viperstruct"
 	"github.com/terorie/yt-mango/data"
-	"github.com/mongodb/mongo-go-driver/mongo/insertopt"
 )
 
 var dbClient *mongo.Client

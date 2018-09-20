@@ -1,12 +1,12 @@
 package apijson
 
 import (
-	"github.com/valyala/fastjson"
 	"errors"
-	"strings"
-	"net/http"
-	"io/ioutil"
 	"fmt"
+	"github.com/valyala/fastjson"
+	"io/ioutil"
+	"net/http"
+	"strings"
 )
 
 var MissingData = errors.New("missing data")

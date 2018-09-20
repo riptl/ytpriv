@@ -1,15 +1,15 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
-	"os"
-	"fmt"
 	"bufio"
+	"encoding/base64"
 	"encoding/json"
+	"fmt"
+	"github.com/spf13/cobra"
 	"github.com/terorie/yt-mango/net"
 	c "github.com/terorie/yt-mango/pretty"
+	"os"
 	"strings"
-	"encoding/base64"
 )
 
 var DebugFile = cobra.Command{

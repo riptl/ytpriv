@@ -1,8 +1,8 @@
 package api
 
 import (
-	"testing"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestGetVideoID(t *testing.T) {

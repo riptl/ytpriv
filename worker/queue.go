@@ -1,11 +1,11 @@
 package worker
 
 import (
-	"github.com/terorie/yt-mango/store"
-	log "github.com/sirupsen/logrus"
-	"time"
 	"context"
+	log "github.com/sirupsen/logrus"
+	"github.com/terorie/yt-mango/store"
 	"sync"
+	"time"
 )
 
 // Writes newly found video IDs ("newIDs") and

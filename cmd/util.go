@@ -2,8 +2,8 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"github.com/spf13/cobra"
+	"os"
 )
 
 func cmdFunc(f func(*cobra.Command, []string)error) func(*cobra.Command, []string) {

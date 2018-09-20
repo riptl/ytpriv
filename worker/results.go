@@ -1,9 +1,9 @@
 package worker
 
 import (
-	"time"
 	log "github.com/sirupsen/logrus"
 	"github.com/terorie/yt-mango/data"
+	"time"
 )
 
 // Collect results from wc.results,

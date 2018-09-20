@@ -5,9 +5,9 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"github.com/terorie/yt-mango/cmd"
 	"github.com/terorie/yt-mango/version"
+	"os"
 )
 
 func main() {

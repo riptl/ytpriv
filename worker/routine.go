@@ -1,12 +1,12 @@
 package worker
 
 import (
-	"time"
 	log "github.com/sirupsen/logrus"
-	"github.com/terorie/yt-mango/apis"
-	"github.com/terorie/yt-mango/net"
-	"github.com/terorie/yt-mango/data"
 	"github.com/terorie/yt-mango/api"
+	"github.com/terorie/yt-mango/apis"
+	"github.com/terorie/yt-mango/data"
+	"github.com/terorie/yt-mango/net"
+	"time"
 )
 
 func workRoutine(

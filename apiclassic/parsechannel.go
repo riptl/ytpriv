@@ -1,10 +1,10 @@
 package apiclassic
 
 import (
-	"github.com/terorie/yt-mango/data"
-	"net/http"
 	"errors"
 	"github.com/PuerkitoBio/goquery"
+	"github.com/terorie/yt-mango/data"
+	"net/http"
 	"strconv"
 )
 

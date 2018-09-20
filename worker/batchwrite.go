@@ -1,11 +1,11 @@
 package worker
 
 import (
-	"github.com/terorie/yt-mango/data"
-	"time"
-	"github.com/terorie/yt-mango/store"
 	log "github.com/sirupsen/logrus"
+	"github.com/terorie/yt-mango/data"
+	"github.com/terorie/yt-mango/store"
 	"sync"
+	"time"
 )
 
 // Uploads batches to Mongo

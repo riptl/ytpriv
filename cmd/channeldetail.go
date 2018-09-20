@@ -1,13 +1,13 @@
 package cmd
 
 import (
-	"fmt"
 	"encoding/json"
+	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/terorie/yt-mango/api"
 	"github.com/terorie/yt-mango/apis"
-	"github.com/terorie/yt-mango/net"
 	"github.com/terorie/yt-mango/data"
+	"github.com/terorie/yt-mango/net"
 )
 
 var channelDetailCmd = cobra.Command{

@@ -1,14 +1,14 @@
 package cmd
 
 import (
-	"os"
+	"context"
+	"errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/terorie/yt-mango/store"
-	"errors"
 	"github.com/terorie/yt-mango/worker"
-	"context"
+	"os"
 	"os/signal"
 	"syscall"
 )

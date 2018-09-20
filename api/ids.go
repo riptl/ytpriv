@@ -1,10 +1,10 @@
 package api
 
 import (
+	"fmt"
+	"net/url"
 	"regexp"
 	"strings"
-	"net/url"
-	"fmt"
 )
 
 // FIXME: API package should be abstract, no utility code in here

@@ -1,17 +1,17 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
-	"os"
-	"time"
 	"bufio"
-	log "github.com/sirupsen/logrus"
 	"fmt"
-	"github.com/terorie/yt-mango/net"
-	"sync/atomic"
-	"sync"
+	log "github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 	"github.com/terorie/yt-mango/api"
 	"github.com/terorie/yt-mango/apis"
+	"github.com/terorie/yt-mango/net"
+	"os"
+	"sync"
+	"sync/atomic"
+	"time"
 )
 
 var offset uint

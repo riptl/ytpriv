@@ -1,16 +1,16 @@
 package apiclassic
 
 import (
-	"github.com/PuerkitoBio/goquery"
 	"errors"
-	"strconv"
-	"time"
-	"github.com/terorie/yt-mango/data"
-	"regexp"
-	"github.com/valyala/fastjson"
-	"strings"
-	"net/http"
+	"github.com/PuerkitoBio/goquery"
 	"github.com/terorie/yt-mango/api"
+	"github.com/terorie/yt-mango/data"
+	"github.com/valyala/fastjson"
+	"net/http"
+	"regexp"
+	"strconv"
+	"strings"
+	"time"
 )
 
 const likeBtnSelector = ".like-button-renderer-like-button-unclicked"

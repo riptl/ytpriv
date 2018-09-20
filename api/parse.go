@@ -1,9 +1,9 @@
 package api
 
 import (
+	"errors"
 	"strconv"
 	"strings"
-	"errors"
 )
 
 var durationErr = errors.New("unknown duration code")

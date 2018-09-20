@@ -2,8 +2,8 @@ package apijson
 
 import (
 	"bytes"
-	"strconv"
 	"encoding/base64"
+	"strconv"
 )
 
 func GenChannelPageToken(channelId string, page uint64) string {

@@ -1,14 +1,14 @@
 package worker
 
 import (
-	"os"
 	"context"
-	"time"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"github.com/terorie/yt-mango/data"
 	"github.com/terorie/viperstruct"
+	"github.com/terorie/yt-mango/data"
+	"os"
 	"sync"
+	"time"
 )
 
 const vpsInterval = 3

@@ -1,9 +1,9 @@
 package pretty
 
 import (
-		"os"
-	"strings"
 	"github.com/mattn/go-isatty"
+	"os"
+	"strings"
 )
 
 var isTTY bool

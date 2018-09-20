@@ -1,11 +1,11 @@
 package apiclassic
 
 import (
-	"net/http"
-	"errors"
 	"encoding/xml"
-	"github.com/terorie/yt-mango/net"
+	"errors"
 	"fmt"
+	"github.com/terorie/yt-mango/net"
+	"net/http"
 )
 
 const videoURL = "https://www.youtube.com/watch?has_verified=1&bpctr=6969696969&v="

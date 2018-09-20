@@ -1,11 +1,11 @@
 package store
 
 import (
-	log "github.com/sirupsen/logrus"
+	"errors"
 	"github.com/go-redis/redis"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"github.com/terorie/viperstruct"
-	"errors"
 	"time"
 )
 

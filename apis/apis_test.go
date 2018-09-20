@@ -1,13 +1,13 @@
 package apis
 
 import (
+	"github.com/stretchr/testify/assert"
+	"github.com/terorie/yt-mango/api"
+	"github.com/terorie/yt-mango/data"
+	"github.com/terorie/yt-mango/net"
+	"strings"
 	"testing"
 	"time"
-	"github.com/stretchr/testify/assert"
-	"github.com/terorie/yt-mango/net"
-	"github.com/terorie/yt-mango/data"
-	"github.com/terorie/yt-mango/api"
-	"strings"
 )
 
 func TestClassicVideo(t *testing.T) { testVideo(t, &ClassicAPI) }
