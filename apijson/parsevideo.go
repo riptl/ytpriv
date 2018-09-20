@@ -17,20 +17,20 @@ var matchThumbUrl = regexp.MustCompile("^.+/hqdefault\\.jpg")
 
 var unexpectedType = errors.New("unexpected type")
 
-func ParseVideo(v *data.Video, res *http.Response) ([]string, error) {
+func ParseVideo(v *data.Video, res *http.Response) error {
 	defer res.Body.Close()
 
 	// Download response
 	body, err := ioutil.ReadAll(res.Body)
-	if err != nil { return nil, err }
+	if err != nil { return err }
 
 	// Parse JSON
 	var p fastjson.Parser
 	root, err := p.ParseBytes(body)
-	if err != nil { return nil, err }
+	if err != nil { return err }
 
 	rootArray := root.GetArray()
-	if rootArray == nil { return nil, unexpectedType }
+	if rootArray == nil { return unexpectedType }
 
 	// Get interesting objects
 	var pageResponse *fastjson.Value
@@ -48,7 +48,7 @@ func ParseVideo(v *data.Video, res *http.Response) ([]string, error) {
 	}
 
 	if v.URL != "" { v.URL = "https://www.youtube.com" + v.URL }
-	if playerResponse == nil { return nil, errors.New("no video details") }
+	if playerResponse == nil { return errors.New("no video details") }
 
 	// Playability status
 	playability := playerResponse.Get("playabilityStatus")
@@ -57,7 +57,7 @@ func ParseVideo(v *data.Video, res *http.Response) ([]string, error) {
 	playabilityStatus := string(playability.GetStringBytes("status"))
 	switch playabilityStatus {
 	case "ERROR":
-		return nil, api.VideoUnavailable
+		return api.VideoUnavailable
 	case "LOGIN_REQUIRED":
 		v.FamilyFriendly = false
 	default:
@@ -72,25 +72,25 @@ func ParseVideo(v *data.Video, res *http.Response) ([]string, error) {
 	}
 
 	if err := parseVideoDetails(v, playerResponse.Get("videoDetails"));
-		err != nil { return nil, err }
+		err != nil { return err }
 
 	watchNextResults := pageResponse.Get("contents", "twoColumnWatchNextResults")
 
 	// Parse video infos
 	watchNextContents := watchNextResults.GetArray("results", "results", "contents")
 	if err := parseVideoInfo(v, watchNextContents);
-		err != nil { return nil, err }
+		err != nil { return err }
 
 	// Get related vids
-	related := parseVideoRelated(watchNextResults)
+	v.Related = parseVideoRelated(watchNextResults)
 
 	// Parse player args
 	if playerArgs != nil {
 		if err := parsePlayerArgs(v, playerArgs);
-			err != nil { return nil, err }
+			err != nil { return err }
 	}
 
-	return related, nil
+	return nil
 }
 
 func parseVideoDetails(v *data.Video, videoDetails *fastjson.Value) error {

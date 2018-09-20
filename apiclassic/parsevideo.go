@@ -21,8 +21,8 @@ const recommendSelector = ".related-list-item"
 
 var playerConfigErr = errors.New("failed to parse player config")
 
-func ParseVideo(v *data.Video, res *http.Response) (_ []string, err error) {
-	if res.StatusCode != 200 { return nil, errors.New("HTTP failure") }
+func ParseVideo(v *data.Video, res *http.Response) (err error) {
+	if res.StatusCode != 200 { return errors.New("HTTP failure") }
 
 	defer res.Body.Close()
 	doc, err := goquery.NewDocumentFromReader(res.Body)
@@ -38,26 +38,25 @@ type parseVideoInfo struct {
 	restricted bool
 }
 
-func (p *parseVideoInfo) parse() ([]string, error) {
+func (p *parseVideoInfo) parse() error {
 	available, err := p.isAvailable()
-	if err != nil { return nil, err }
-	if !available { return nil, api.VideoUnavailable }
+	if err != nil { return err }
+	if !available { return api.VideoUnavailable }
 
 	if err := p.parseLikeDislike();
-		err != nil { return nil, err }
+		err != nil { return err }
 	if err := p.parseUploader();
-		err != nil { return nil, err }
+		err != nil { return err }
 	if err := p.parseDescription();
-		err != nil { return nil, err }
+		err != nil { return err }
 	if err := p.parsePlayerConfig();
-		err != nil { return nil, err }
+		err != nil { return err }
 	if err := p.parseMetas();
-		err != nil { return nil, err }
-	var recommends []string
-	if err := p.parseRecommends(&recommends);
-		err != nil { return nil, err }
+		err != nil { return err }
+	if err := p.parseRecommends();
+		err != nil { return err }
 	p.parseLicense()
-	return recommends, nil
+	return nil
 }
 
 func (p *parseVideoInfo) isAvailable() (bool, error) {
@@ -219,14 +218,14 @@ func (p *parseVideoInfo) parsePlayerConfig() error {
 	return nil
 }
 
-func (p *parseVideoInfo) parseRecommends(r *[]string) error {
+func (p *parseVideoInfo) parseRecommends() error {
 	s := p.doc.Find(recommendSelector).Find(".content-wrapper").Find("a")
 	s.Each(func(i int, s *goquery.Selection) {
 		href, exists := s.Attr("href")
 		if !exists { return }
 		if !strings.HasPrefix(href, "/watch?v=") { return }
 		id := href[len("/watch?v="):]
-		*r = append(*r, id)
+		p.v.Related = append(p.v.Related, id)
 	})
 	return nil
 }

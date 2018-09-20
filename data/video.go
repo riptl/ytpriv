@@ -37,6 +37,7 @@ type Video struct {
 	Views uint64 `json:"views" bson:"views"`
 	Likes uint64 `json:"likes" bson:"likes"`
 	Dislikes uint64 `json:"dislikes" bson:"dislikes"`
+	Related []string `json:"related" bson:"related"` // Related video IDs
 }
 
 type Subtitle struct {

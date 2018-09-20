@@ -37,7 +37,7 @@ func workRoutine(
 		v.ID = videoId
 		var result interface{}
 
-		next, err := apis.Main.ParseVideo(&v, res)
+		err = apis.Main.ParseVideo(&v, res)
 		if err == api.VideoUnavailable {
 			log.Debugf("Video is unavailable: %s", videoId)
 			result = data.CrawlError{
@@ -58,8 +58,8 @@ func workRoutine(
 
 		results <- result
 
-		if len(next) > 0 {
-			newIDs <- next
+		if len(v.Related) > 0 {
+			newIDs <- v.Related
 		}
 	}
 }

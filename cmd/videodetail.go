@@ -6,8 +6,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/terorie/yt-mango/api"
 	"github.com/terorie/yt-mango/apis"
-	"github.com/terorie/yt-mango/net"
 	"github.com/terorie/yt-mango/data"
+	"github.com/terorie/yt-mango/net"
 )
 
 var videoDetailCmd = cobra.Command{
@@ -30,7 +30,7 @@ func doVideoDetail(_ *cobra.Command, args []string) error {
 
 	var v data.Video
 	v.ID = videoID
-	related, err := apis.Main.ParseVideo(&v, res)
+	err = apis.Main.ParseVideo(&v, res)
 	if err != nil { return err }
 
 	bytesMain, err := json.MarshalIndent(&v, "", "\t")
@@ -38,14 +38,6 @@ func doVideoDetail(_ *cobra.Command, args []string) error {
 
 	fmt.Println(string(bytesMain))
 	fmt.Println()
-
-	if len(related) > 0 {
-		bytesRelated, err := json.Marshal(related)
-		if err != nil { return err }
-
-		fmt.Println("Related URLs:")
-		fmt.Println(string(bytesRelated))
-	}
 
 	return nil
 }
