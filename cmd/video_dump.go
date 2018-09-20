@@ -43,8 +43,6 @@ func doVideoDump(_ *cobra.Command, args []string) (err error) {
 
 	toFindUint64, err := strconv.ParseUint(nStr, 10, 31)
 	if err != nil { return }
-	toFind := int32(toFindUint64)
-	left := toFind
 
 	err = os.Mkdir(path, 0755)
 	if err != nil { return }
@@ -54,7 +52,7 @@ func doVideoDump(_ *cobra.Command, args []string) (err error) {
 
 	d := videoDump{
 		path:     path,
-		left:     left,
+		left:     int32(toFindUint64),
 		queue:    []string{firstID},
 		foundAll: 0,
 	}
@@ -69,6 +67,15 @@ func doVideoDump(_ *cobra.Command, args []string) (err error) {
 		d.activeRoutines.Add(1)
 		go d.videoDumpWorker()
 	}
+
+	// Print stats
+	go func() {
+		for range time.NewTicker(time.Second).C {
+			_left := atomic.LoadInt32(&d.left)
+			logrus.WithField("left", _left).
+				Infof("%d videos left", _left)
+		}
+	}()
 
 	// Wait for routines to finish
 	d.activeRoutines.Wait()
@@ -94,19 +101,21 @@ func (d *videoDump) videoDumpWorker() {
 	defer d.activeRoutines.Done()
 
 	for {
+		// Check if all videos loaded
+		if atomic.LoadInt32(&d.left) == 0 { return }
+
 		videoId, ok := d.getNextID()
 		if !ok {
 			time.Sleep(500 * time.Millisecond)
 			continue
 		}
 
-		if d.videoDumpSingle(videoId) {
-			// Update videos left counter
-			if atomic.AddInt32(&d.left, -1) <= 0 {
-				// No vids left
-				println("waiting")
-				return
-			}
+		// Update videos left counter
+		if atomic.AddInt32(&d.left, -1) <= 0 { return }
+
+		if !d.videoDumpSingle(videoId) {
+			// Increment videos left counter back again
+			atomic.AddInt32(&d.left, +1)
 		}
 	}
 }
@@ -170,10 +179,7 @@ func (d *videoDump) videoDumpSingle(videoId string) (success bool) {
 	err = enc.Encode(&v)
 	if err != nil { return }
 
-	logrus.WithFields(logrus.Fields{
-		"id": videoId,
-		"path": vidPath,
-	}).Info("Got video")
+	logrus.WithField("id", videoId).Debug("Got video")
 
 	success = true
 	return
