@@ -37,11 +37,13 @@ type videoDump struct{
 }
 
 func doVideoDump(_ *cobra.Command, args []string) (err error) {
+	startTime := time.Now()
+
 	nStr := args[0]
 	path := args[1]
 	startIDs := args[2:]
 
-	toFindUint64, err := strconv.ParseUint(nStr, 10, 31)
+	toDownload, err := strconv.ParseUint(nStr, 10, 31)
 	if err != nil { return }
 
 	err = os.Mkdir(path, 0755)
@@ -54,7 +56,7 @@ func doVideoDump(_ *cobra.Command, args []string) (err error) {
 
 	d := videoDump{
 		path:     path,
-		left:     int32(toFindUint64),
+		left:     int32(toDownload),
 		queue:    startIDs,
 		foundAll: 0,
 	}
@@ -69,13 +71,22 @@ func doVideoDump(_ *cobra.Command, args []string) (err error) {
 	go func() {
 		for range time.NewTicker(time.Second).C {
 			_left := atomic.LoadInt32(&d.left)
-			logrus.WithField("left", _left).
-				Infof("%d videos left", _left)
+			if _left != 0 {
+				logrus.WithField("left", _left).
+					Infof("%d videos left", _left)
+			} else {
+				break
+			}
 		}
 	}()
 
 	// Wait for routines to finish
 	d.activeRoutines.Wait()
+
+	// Print success message
+	logrus.Infof("Downloaded %d videos in %s",
+		toDownload,
+		time.Since(startTime).String())
 
 	return nil
 }
