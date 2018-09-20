@@ -65,7 +65,6 @@ This can be changed using a config file (example in `/example.yml`).
     - _/store/queue.go_: Redis job queue (using [go-redis][go-redis])
     - _/store/db.go_: Mongo main DB (using [the official Mongo driver][mongodb-driver])
 - _/worker_ Worker mode
-- _/viperstruct:_ Deserialization utility for [Viper][viper] configuration
 
 - _/pretty_: (not yet used) Terminal color utilities
 
