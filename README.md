@@ -1,4 +1,4 @@
-# WIP: yt-mango 💾
+# yt-mango 💾
 
 ![build status](https://travis-ci.org/terorie/yt-mango.svg?branch=master)
 > YT metadata extractor inspired by [`youtube-ma` by _CorentinB_][youtube-ma]
@@ -30,10 +30,10 @@ with `go get github.com/terorie/yt-mango` for a newer build!
   ```
 - Download a collection of related videos:
   ```
-  # ./yt-mango video dump 1000 collection imooXqWLOfA -c 64
+  # ./yt-mango video dump 1000 dir imooXqWLOfA -c 64
   …
   INFO[0030] Downloaded 1000 videos in 30s!
-  # ls -1U | wc -l
+  # ls -1U dir | wc -l
   1000
   ```
 - [Distributed farming of videos (~5000 per second)](worker.md)
