@@ -9,4 +9,5 @@ var Video = cobra.Command{
 
 func init() {
 	Video.AddCommand(&videoDetailCmd)
+	Video.AddCommand(&videoDumpCmd)
 }
