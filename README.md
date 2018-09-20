@@ -28,7 +28,15 @@ with `go get github.com/terorie/yt-mango` for a newer build!
       …
   }
   ```
-- [Farming videos (~2000 videos per second)](worker.md)
+- Download a collection of related videos:
+  ```
+  # ./yt-mango video dump 1000 collection imooXqWLOfA -c 64
+  …
+  INFO[0030] Downloaded 1000 videos in 30s!
+  # ls -1U | wc -l
+  1000
+  ```
+- [Distributed farming of videos (~5000 per second)](worker.md)
 
 ##### Project structure
 
