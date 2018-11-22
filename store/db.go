@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"github.com/mongodb/mongo-go-driver/mongo"
-	"github.com/mongodb/mongo-go-driver/mongo/insertopt"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"github.com/terorie/viperstruct"
@@ -59,7 +58,7 @@ func SubmitCrawls(results []data.Crawl) (err error) {
 		iResults[i] = r
 	}
 
-	_, err = videos.InsertMany(context.Background(), iResults, insertopt.Ordered(false))
+	_, err = videos.InsertMany(context.Background(), iResults)
 	if err != nil {
 		log.Errorf("Uploading crawl of %d videos failed: %s", len(results), err.Error())
 	}
