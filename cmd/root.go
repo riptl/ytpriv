@@ -9,7 +9,7 @@ import (
 	"os"
 )
 
-const Version = "v0.1 -- dev"
+const Version = "v0.2 -- dev"
 
 var forceAPI string
 var concurrentRequests uint
