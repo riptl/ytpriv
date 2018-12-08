@@ -4,9 +4,8 @@ import (
 	"errors"
 	"github.com/terorie/yt-mango/api"
 	"github.com/terorie/yt-mango/data"
+	"github.com/valyala/fasthttp"
 	"github.com/valyala/fastjson"
-	"io/ioutil"
-	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
@@ -17,16 +16,10 @@ var matchThumbUrl = regexp.MustCompile("^.+/hqdefault\\.jpg")
 
 var unexpectedType = errors.New("unexpected type")
 
-func ParseVideo(v *data.Video, res *http.Response) error {
-	defer res.Body.Close()
-
-	// Download response
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil { return err }
-
+func ParseVideo(v *data.Video, res *fasthttp.Response) error {
 	// Parse JSON
 	var p fastjson.Parser
-	root, err := p.ParseBytes(body)
+	root, err := p.ParseBytes(res.Body())
 	if err != nil { return err }
 
 	rootArray := root.GetArray()

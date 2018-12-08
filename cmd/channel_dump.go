@@ -8,6 +8,7 @@ import (
 	"github.com/terorie/yt-mango/api"
 	"github.com/terorie/yt-mango/apis"
 	"github.com/terorie/yt-mango/net"
+	"github.com/valyala/fasthttp"
 	"os"
 	"time"
 )
@@ -79,7 +80,11 @@ func doChannelDump(_ *cobra.Command, args []string) error {
 	for {
 		// Request next page
 		req := apis.Main.GrabChannelPage(channelID, page)
-		res, err := net.Client.Do(req)
+
+		res := fasthttp.AcquireResponse()
+		// TODO defer fasthttp.ReleaseResponse(res)
+
+		err := net.Client.Do(req, res)
 		if err != nil {
 			log.Errorf("Error at page %d: %v", page, err)
 			break

@@ -5,6 +5,7 @@ import (
 	"github.com/terorie/yt-mango/api"
 	"github.com/terorie/yt-mango/data"
 	"github.com/terorie/yt-mango/net"
+	"github.com/valyala/fasthttp"
 	"strings"
 	"testing"
 	"time"
@@ -26,7 +27,10 @@ func TestJsonVideoUnlisted(t *testing.T) { testVideoUnlisted(t, &JsonAPI) }
 func testVideo(t *testing.T, a *api.API) {
 	req := a.GrabVideo("uOXLKPCs54c")
 
-	res, err := net.Client.Do(req)
+	res := fasthttp.AcquireResponse()
+	defer fasthttp.ReleaseResponse(res)
+
+	err := net.Client.Do(req, res)
 	if err != nil { assert.FailNow(t, err.Error()) }
 
 	var v data.Video
@@ -70,7 +74,10 @@ func testVideo(t *testing.T, a *api.API) {
 func testVideoDeleted(t *testing.T, a *api.API) {
 	req := a.GrabVideo("chGl0_nFyqg")
 
-	res, err := net.Client.Do(req)
+	res := fasthttp.AcquireResponse()
+	defer fasthttp.ReleaseResponse(res)
+
+	err := net.Client.Do(req, res)
 	if err != nil {
 		assert.FailNow(t, err.Error())
 	}
@@ -88,7 +95,10 @@ func testVideoDeleted(t *testing.T, a *api.API) {
 func testVideoRestricted(t *testing.T, a *api.API) {
 	req := a.GrabVideo("6kLq3WMV1nU")
 
-	res, err := net.Client.Do(req)
+	res := fasthttp.AcquireResponse()
+	defer fasthttp.ReleaseResponse(res)
+
+	err := net.Client.Do(req, res)
 	if err != nil { assert.FailNow(t, err.Error()) }
 
 	v := data.Video{ID: "6kLq3WMV1nU"}
@@ -130,7 +140,10 @@ func testVideoRestricted(t *testing.T, a *api.API) {
 func testVideoDescription(t *testing.T, a *api.API) {
 	req := a.GrabVideo("kj9mFK62c6E")
 
-	res, err := net.Client.Do(req)
+	res := fasthttp.AcquireResponse()
+	defer fasthttp.ReleaseResponse(res)
+
+	err := net.Client.Do(req, res)
 	if err != nil { assert.FailNow(t, err.Error()) }
 
 	v := data.Video{ID: "kj9mFK62c6E"}
@@ -166,7 +179,10 @@ some attacks: `
 func testVideoUnlisted(t *testing.T, a *api.API) {
 	req := a.GrabVideo("RD5otQyBFqc")
 
-	res, err := net.Client.Do(req)
+	res := fasthttp.AcquireResponse()
+	defer fasthttp.ReleaseResponse(res)
+
+	err := net.Client.Do(req, res)
 	if err != nil { assert.FailNow(t, err.Error()) }
 
 	v := data.Video{ID: "RD5otQyBFqc"}

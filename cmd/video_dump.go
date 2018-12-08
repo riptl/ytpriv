@@ -8,6 +8,7 @@ import (
 	"github.com/terorie/yt-mango/apis"
 	"github.com/terorie/yt-mango/data"
 	"github.com/terorie/yt-mango/net"
+	"github.com/valyala/fasthttp"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -133,7 +134,11 @@ func (d *videoDump) videoDumpSingle(videoId string) (success bool) {
 
 	// Download video info
 	req := apis.Main.GrabVideo(videoId)
-	res, err := net.Client.Do(req)
+
+	res := fasthttp.AcquireResponse()
+	defer fasthttp.ReleaseResponse(res)
+
+	err := net.Client.Do(req, res)
 	if err != nil {
 		logrus.WithError(err).
 			WithField("id", videoId).

@@ -3,28 +3,22 @@ package apijson
 import (
 	"errors"
 	"fmt"
+	"github.com/valyala/fasthttp"
 	"github.com/valyala/fastjson"
-	"io/ioutil"
-	"net/http"
 	"strings"
 )
 
 var MissingData = errors.New("missing data")
 var ServerError = errors.New("server error")
 
-func ParseChannelVideoURLs(res *http.Response) ([]string, error) {
-	if res.StatusCode != 200 {
-		return nil, fmt.Errorf("HTTP error: %s", res.Request.URL.String())
+func ParseChannelVideoURLs(res *fasthttp.Response) ([]string, error) {
+	if res.StatusCode() != 200 {
+		return nil, fmt.Errorf("HTTP status %d", res.StatusCode())
 	}
-
-	// Download response
-	defer res.Body.Close()
-	buf, err := ioutil.ReadAll(res.Body)
-	if err != nil { return nil, err }
 
 	// Parse JSON
 	var p fastjson.Parser
-	rootObj, err := p.ParseBytes(buf)
+	rootObj, err := p.ParseBytes(res.Body())
 	if err != nil { return nil, err }
 
 	// Root as array

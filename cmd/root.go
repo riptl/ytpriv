@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"bufio"
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -52,7 +51,7 @@ func rootPreRun(_ *cobra.Command, _ []string) {
 	net.MaxWorkers = concurrentRequests
 
 	if debugHttpFile != "" {
-		debugFile, err := os.OpenFile(debugHttpFile,
+		/*debugFile, err := os.OpenFile(debugHttpFile,
 			os.O_WRONLY | os.O_CREATE | os.O_APPEND,
 			0644)
 		if err != nil {
@@ -63,7 +62,9 @@ func rootPreRun(_ *cobra.Command, _ []string) {
 		debugWriter := bufio.NewWriter(debugFile)
 
 		// Force all HTTP requests through debug code
-		net.Client.Transport = net.DebugTransport{ debugFile, debugWriter }
+		net.Client.Transport = net.DebugTransport{ debugFile, debugWriter }*/
+
+		logrus.Fatal("Debug client not implemented yet")
 	}
 
 	switch forceAPI {

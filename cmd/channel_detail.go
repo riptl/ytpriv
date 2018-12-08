@@ -8,6 +8,7 @@ import (
 	"github.com/terorie/yt-mango/apis"
 	"github.com/terorie/yt-mango/data"
 	"github.com/terorie/yt-mango/net"
+	"github.com/valyala/fasthttp"
 )
 
 var channelDetailCmd = cobra.Command{
@@ -25,7 +26,10 @@ func doChannelDetail(_ *cobra.Command, args []string) error {
 
 	channelReq := apis.Main.GrabChannel(channelID)
 
-	res, err := net.Client.Do(channelReq)
+	res := fasthttp.AcquireResponse()
+	defer fasthttp.ReleaseResponse(res)
+
+	err = net.Client.Do(channelReq, res)
 	if err != nil { return err }
 
 	var c data.Channel

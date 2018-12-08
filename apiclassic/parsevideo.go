@@ -1,12 +1,14 @@
 package apiclassic
 
 import (
+	"bytes"
 	"errors"
+	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/terorie/yt-mango/api"
 	"github.com/terorie/yt-mango/data"
+	"github.com/valyala/fasthttp"
 	"github.com/valyala/fastjson"
-	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
@@ -21,11 +23,13 @@ const recommendSelector = ".related-list-item"
 
 var playerConfigErr = errors.New("failed to parse player config")
 
-func ParseVideo(v *data.Video, res *http.Response) (err error) {
-	if res.StatusCode != 200 { return errors.New("HTTP failure") }
+func ParseVideo(v *data.Video, res *fasthttp.Response) (err error) {
+	if res.StatusCode() != 200 {
+		return fmt.Errorf("HTTP status %d", res.StatusCode())
+	}
 
-	defer res.Body.Close()
-	doc, err := goquery.NewDocumentFromReader(res.Body)
+	buf := res.Body()
+	doc, err := goquery.NewDocumentFromReader(bytes.NewReader(buf))
 	if err != nil { return }
 
 	p := parseVideoInfo{v: v, doc: doc}

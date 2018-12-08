@@ -1,18 +1,21 @@
 package apiclassic
 
 import (
-	"errors"
+	"bytes"
+	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/terorie/yt-mango/data"
-	"net/http"
+	"github.com/valyala/fasthttp"
 	"strconv"
 )
 
-func ParseChannel(c *data.Channel, res *http.Response) (err error) {
-	if res.StatusCode != 200 { return errors.New("HTTP failure") }
+func ParseChannel(c *data.Channel, res *fasthttp.Response) (err error) {
+	if res.StatusCode() != 200 {
+		return fmt.Errorf("HTTP status %d", res.StatusCode())
+	}
 
-	defer res.Body.Close()
-	doc, err := goquery.NewDocumentFromReader(res.Body)
+	buf := res.Body()
+	doc, err := goquery.NewDocumentFromReader(bytes.NewReader(buf))
 	if err != nil { return }
 
 	p := parseChannelInfo{c, doc}

@@ -1,6 +1,9 @@
 package net
 
-import "net/http"
+import (
+	"github.com/valyala/fasthttp"
+	"net/http"
+)
 
 var MaxWorkers uint
 
@@ -16,4 +19,7 @@ func (t MainTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	return http.DefaultTransport.RoundTrip(r)
 }
 
-var Client = http.Client{Transport: MainTransport{}}
+var Client = fasthttp.Client{
+	Name: "yt-mango/0.1",
+	DisableHeaderNamesNormalizing: true,
+}

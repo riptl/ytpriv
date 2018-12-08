@@ -32,7 +32,7 @@ func Run(rootCtxt context.Context, firstId string) {
 		os.Exit(1)
 	}
 	if len(conf.MyName) > 10 {
-		log.Errorf("Name \"%s\" is longer than 10 bytes!")
+		log.Errorf("Name \"%s\" is longer than 10 bytes!", conf.MyName)
 		os.Exit(1)
 	}
 

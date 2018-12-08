@@ -8,6 +8,7 @@ import (
 	"github.com/terorie/yt-mango/apis"
 	"github.com/terorie/yt-mango/data"
 	"github.com/terorie/yt-mango/net"
+	"github.com/valyala/fasthttp"
 )
 
 var videoDetailCmd = cobra.Command{
@@ -25,7 +26,10 @@ func doVideoDetail(_ *cobra.Command, args []string) error {
 
 	videoReq := apis.Main.GrabVideo(videoID)
 
-	res, err := net.Client.Do(videoReq)
+	res := fasthttp.AcquireResponse()
+	defer fasthttp.ReleaseResponse(res)
+
+	err = net.Client.Do(videoReq, res)
 	if err != nil { return err }
 
 	var v data.Video
