@@ -1,7 +1,6 @@
 # yt-mango 💾
 
 ![build status](https://travis-ci.org/terorie/yt-mango.svg?branch=master)
-> YT metadata extractor inspired by [`youtube-ma` by _CorentinB_][youtube-ma]
 
 ##### Get it
 
@@ -36,7 +35,6 @@ with `go get github.com/terorie/yt-mango` for a newer build!
   # ls -1U dir | wc -l
   1000
   ```
-- [Distributed farming of videos (~5000 per second)](worker.md)
 
 ##### Project structure
 
@@ -45,19 +43,10 @@ with `go get github.com/terorie/yt-mango` for a newer build!
 - _/apis_: API implementations
     - _/apiclassic_: HTML API implementation (parsing using [goquery][goquery])
     - _/apijson_: JSON API implementation (parsing using [fastjson][fastjson])
-- _/net_: HTTP utilities (async HTTP implementation)
+- _/net_: HTTP utilities
 - _/cmd_: [Cobra][cobra] CLI
-- _/store_: Queue and database
-    - _/store/queue.go_: Redis job queue (using [go-redis][go-redis])
-    - _/store/db.go_: Mongo main DB (using [the official Mongo driver][mongodb-driver])
-- _/worker_ Worker mode
 
-- _/pretty_: (not yet used) Terminal color utilities
-
- [youtube-ma]: https://github.com/CorentinB/youtube-ma
  [goquery]: https://github.com/PuerkitoBio/goquery
  [fastjson]: https://github.com/valyala/fastjson
  [cobra]: https://github.com/spf13/cobra
  [viper]: https://github.com/spf13/viper
- [go-redis]: https://github.com/go-redis/redis
- [mongodb-driver]: https://github.com/mongodb/mongo-go-driver
