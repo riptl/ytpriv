@@ -9,8 +9,6 @@ import (
 	"github.com/terorie/yt-mango/apis"
 	"github.com/terorie/yt-mango/net"
 	"os"
-	"sync"
-	"sync/atomic"
 	"time"
 )
 
@@ -25,13 +23,6 @@ var channelDumpContext = struct {
 	startTime time.Time
 	printResults bool
 	writer *bufio.Writer
-	// Number of pages that have been
-	// requested but not yet received.
-	// Additional +1 is added if additional
-	// are planned to be requested
-	pagesToReceive sync.WaitGroup
-	// 0 = no event, 1 = error, 2 = end of data
-	eventOccured int32
 }{}
 
 // The channel dump route lists
@@ -82,96 +73,47 @@ func doChannelDump(_ *cobra.Command, args []string) error {
 		channelDumpContext.writer = writer
 	}
 
-	results := make(chan net.JobResult)
-	terminateSub := make(chan bool)
-
-	// TODO Clean up
-	go channelDumpResults(results, terminateSub)
-
 	page := offset
-	for {
-		// Terminate if error or end detected
-		if atomic.LoadInt32(&channelDumpContext.eventOccured) != 0 {
-			goto terminate
-		}
-		// Send new requests
-		req := apis.Main.GrabChannelPage(channelID, page)
-		channelDumpContext.pagesToReceive.Add(1)
-		net.DoAsyncHTTP(req, results, page)
-
-		page++
-	}
-	terminate:
-
-	// Requests sent, wait for remaining requests to finish
-	channelDumpContext.pagesToReceive.Wait()
-
-	terminateSub <- true
-
-	return nil
-}
-
-	// Helper goroutine that processes HTTP results.
-// HTTP results are received on "results".
-// The routine exits if a value on "terminateSub" is received.
-// For every incoming result (error or response),
-// the "pagesToReceive" counter is decreased.
-// If an error is received, the "eventOccured" flag is set.
-func channelDumpResults(results chan net.JobResult, terminateSub chan bool) {
 	totalURLs := 0
+
 	for {
-		select {
-		case <-terminateSub:
-			duration := time.Since(channelDumpContext.startTime)
-			log.Infof("Got %d URLs in %s.", totalURLs, duration.String())
-			os.Exit(0)
-			return
-		case res := <-results:
-			page, numURLs, err := channelDumpResult(&res)
-			// Mark page as processed
-			channelDumpContext.pagesToReceive.Done()
-			// Report back error
-			if err != nil {
-				atomic.StoreInt32(&channelDumpContext.eventOccured, 1)
-				log.Errorf("Error at page %d: %v", page, err)
-			} else if numURLs == 0 {
-				// Got all pages
-				atomic.StoreInt32(&channelDumpContext.eventOccured, 2)
-			} else {
-				totalURLs += numURLs
+		// Request next page
+		req := apis.Main.GrabChannelPage(channelID, page)
+		res, err := net.Client.Do(req)
+		if err != nil {
+			log.Errorf("Error at page %d: %v", page, err)
+			break
+		}
+
+		// Parse response
+		channelURLs, err := apis.Main.ParseChannelVideoURLs(res)
+		if err != nil { return err }
+
+		// Stop if page is empty
+		if len(channelURLs) == 0 { break }
+
+		// Print results
+		log.Infof("Received page %d: %d videos.",
+			page, len(channelURLs))
+
+		if channelDumpContext.printResults {
+			for _, _url := range channelURLs {
+				fmt.Println(_url)
+			}
+		} else {
+			for _, _url := range channelURLs {
+				_, err := channelDumpContext.writer.WriteString(_url + "\n")
+				if err != nil { panic(err) }
 			}
 		}
-	}
-}
 
-// Processes a HTTP result
-func channelDumpResult(res *net.JobResult) (page uint, numURLs int, err error) {
-	var channelURLs []string
-
-	// Extra data is page number
-	page = res.ReqData.(uint)
-	// Abort if request failed
-	if res.Err != nil { return page, 0, res.Err }
-
-	// Parse response
-	channelURLs, err = apis.Main.ParseChannelVideoURLs(res.Res)
-	if err != nil { return }
-	numURLs = len(channelURLs)
-	if numURLs == 0 { return page, 0, nil } // End of data
-
-	// Print results
-	log.Infof("Received page %d: %d videos.", page, numURLs)
-
-	if channelDumpContext.printResults {
-		for _, _url := range channelURLs {
-			fmt.Println(_url)
-		}
-	} else {
-		for _, _url := range channelURLs {
-			_, err := channelDumpContext.writer.WriteString(_url + "\n")
-			if err != nil { panic(err) }
-		}
+		totalURLs += len(channelURLs)
+		page++
 	}
 
-	return
+	duration := time.Since(channelDumpContext.startTime)
+	log.Infof("Got %d URLs in %s.", totalURLs, duration.String())
+	os.Exit(0)
+
+	return nil
 }

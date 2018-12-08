@@ -2,6 +2,8 @@ package net
 
 import "net/http"
 
+var MaxWorkers uint
+
 // Custom headers
 type MainTransport struct{}
 

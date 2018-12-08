@@ -49,7 +49,7 @@ func init() {
 }
 
 func rootPreRun(_ *cobra.Command, _ []string) {
-	net.MaxWorkers = uint32(concurrentRequests)
+	net.MaxWorkers = concurrentRequests
 
 	if debugHttpFile != "" {
 		debugFile, err := os.OpenFile(debugHttpFile,
