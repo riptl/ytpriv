@@ -22,4 +22,5 @@ func (t MainTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 var Client = fasthttp.Client{
 	Name: "yt-mango/0.1",
 	DisableHeaderNamesNormalizing: true,
+	MaxConnsPerHost: 10000,
 }
