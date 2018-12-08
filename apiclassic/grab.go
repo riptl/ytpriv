@@ -50,5 +50,6 @@ func GrabChannel(channelID string) *fasthttp.Request {
 }
 
 func setHeaders(h *fasthttp.RequestHeader) {
+	h.Add("Accept-Language", "en-US")
 	h.Add("Host", "www.youtube.com")
 }

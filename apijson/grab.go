@@ -29,6 +29,7 @@ func GrabChannelPage(channelID string, page uint) *fasthttp.Request {
 }
 
 func setHeaders(h *fasthttp.RequestHeader) {
+	h.Add("Accept-Language", "en-US")
 	h.Add("Host", "www.youtube.com")
 	h.Add("X-YouTube-Client-Name", "1")
 	h.Add("X-YouTube-Client-Version", "2.20170707")
