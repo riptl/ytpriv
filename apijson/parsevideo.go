@@ -74,8 +74,10 @@ func ParseVideo(v *data.Video, res *fasthttp.Response) error {
 	if err := parseVideoInfo(v, watchNextContents);
 		err != nil { return err }
 
+	// TODO secondaryResults
+
 	// Get related vids
-	v.Related = parseVideoRelated(watchNextResults)
+	v.RelatedVideos = parseVideoRelated(watchNextResults)
 
 	// Parse player args
 	if playerArgs != nil {
@@ -87,6 +89,16 @@ func ParseVideo(v *data.Video, res *fasthttp.Response) error {
 }
 
 func parseVideoDetails(v *data.Video, videoDetails *fastjson.Value) error {
+	// Get livestream info
+	if videoDetails.GetBool("isLive") {
+		v.Livestream = new(data.Livestream)
+
+		v.Livestream.OwnerViewing = videoDetails.GetBool("isOwnerViewing")
+		v.Livestream.DvrEnabled = videoDetails.GetBool("isLiveDvrEnabled")
+		v.Livestream.LowLatency = videoDetails.GetBool("isLowLatencyLiveStream")
+		v.Livestream.LiveContent = videoDetails.GetBool("isLiveContent")
+	}
+
 	// Get tags
 	keywords := videoDetails.GetArray("keywords")
 	for _, keywordValue := range keywords {
@@ -166,6 +178,8 @@ func parseVideoInfo(v *data.Video, videoInfo []*fastjson.Value) error {
 	dateText := string(secondary.GetStringBytes("dateText", "simpleText"))
 	dateText = strings.TrimPrefix(dateText, "Published on ")
 	dateText = strings.TrimPrefix(dateText, "Uploaded on ") // Unlisted video
+	dateText = strings.TrimPrefix(dateText, "Started streaming on ")
+	dateText = strings.TrimPrefix(dateText, "Streamed live on ")
 
 	date, err := time.Parse("Jan _2, 2006", dateText)
 	if err == nil { v.UploadDate = date }
@@ -195,14 +209,38 @@ func parsePlayerArgs(v *data.Video, args *fastjson.Value) error {
 	return nil
 }
 
-func parseVideoRelated(watchNextResults *fastjson.Value) []string {
-	var related []string
+func parseVideoRelated(watchNextResults *fastjson.Value) []data.RelatedVideo {
+	var related []data.RelatedVideo
 	results := watchNextResults.GetArray("secondaryResults", "secondaryResults", "results")
 	for _, obj := range results {
-		videoId := string(obj.GetStringBytes("compactVideoRenderer", "videoId"))
+		renderer := obj.Get("compactVideoRenderer")
+
+		videoId := string(renderer.GetStringBytes("videoId"))
+		uploaderID := getVideoRendererUploader(renderer)
+
+		var vid data.RelatedVideo
+		vid.ID = videoId
+
+		if uploaderID != "" {
+			vid.UploaderID = uploaderID
+			vid.UploaderURL = "https://www.youtube.com/channel/" + uploaderID
+		}
+
 		if videoId != "" {
-			related = append(related, videoId)
+			related = append(related, vid)
 		}
 	}
 	return related
+}
+
+func getVideoRendererUploader(renderer *fastjson.Value) string {
+	channelRuns := renderer.GetArray("longBylineText", "runs")
+	for _, run := range channelRuns {
+		browseID := string(run.GetStringBytes(
+			"navigationEndpoint", "browseEndpoint", "browseId"))
+		if browseID != "" {
+			return browseID
+		}
+	}
+	return ""
 }

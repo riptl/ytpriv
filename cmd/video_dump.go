@@ -159,9 +159,9 @@ func (d *videoDump) videoDumpSingle(videoId string) (success bool) {
 	}
 
 	var newIDs []string
-	for _, id := range v.Related {
-		if _, loaded := d.found.LoadOrStore(id, true); !loaded {
-			newIDs = append(newIDs, id)
+	for _, vid := range v.RelatedVideos {
+		if _, loaded := d.found.LoadOrStore(vid.ID, true); !loaded {
+			newIDs = append(newIDs, vid.ID)
 		}
 	}
 

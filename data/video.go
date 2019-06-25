@@ -24,6 +24,7 @@ type Video struct {
 	Tags []string `json:"tags,omitempty"`
 	Subtitles []string `json:"subtitles,omitempty"`
 	FamilyFriendly bool `json:"family_friendly"`
+	Livestream *Livestream `json:"omitempty"`
 
 	// Privacy settings
 	Visibility VisibilitySetting `json:"visibility"`
@@ -37,7 +38,20 @@ type Video struct {
 	Views uint64 `json:"views"`
 	Likes uint64 `json:"likes"`
 	Dislikes uint64 `json:"dislikes"`
-	Related []string `json:"related"` // Related video IDs
+	RelatedVideos []RelatedVideo `json:"related"`
+}
+
+type RelatedVideo struct {
+	ID string `json:"id"`
+	UploaderID string `json:"uploader_id"`
+	UploaderURL string `json:"uploader_url"`
+}
+
+type Livestream struct {
+	LowLatency bool `json:"low_latency"`
+	DvrEnabled bool `json:"dvr_enabled"`
+	OwnerViewing bool `json:"owner_viewing"`
+	LiveContent bool `json:"is_live_content"`
 }
 
 type Subtitle struct {

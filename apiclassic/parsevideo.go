@@ -212,12 +212,11 @@ func (p *parseVideoInfo) parsePlayerConfig() error {
 
 	// Get fmt_list string
 	fmts := string(args.GetStringBytes("fmt_list"))
-	if fmts == "" { return playerConfigErr }
-
-	// Split and decode it
-	fmtList, err := api.ParseFormatList(fmts)
-	if err != nil { return err }
-	p.v.Formats = fmtList
+	if fmts != "" {
+		// Split and decode it
+		fmtList, _ := api.ParseFormatList(fmts)
+		p.v.Formats = fmtList
+	}
 
 	return nil
 }
@@ -229,7 +228,10 @@ func (p *parseVideoInfo) parseRecommends() error {
 		if !exists { return }
 		if !strings.HasPrefix(href, "/watch?v=") { return }
 		id := href[len("/watch?v="):]
-		p.v.Related = append(p.v.Related, id)
+		p.v.RelatedVideos = append(p.v.RelatedVideos, data.RelatedVideo{
+			ID: id,
+			// TODO Channel info
+		})
 	})
 	return nil
 }

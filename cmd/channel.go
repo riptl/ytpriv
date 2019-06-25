@@ -15,4 +15,5 @@ func init() {
 	channelDumpCmd.Flags().BoolVarP(&force, "force", "f", false, "Overwrite the output file if it already exists")
 	Channel.AddCommand(&channelDumpCmd)
 	Channel.AddCommand(&channelDetailCmd)
+	Channel.AddCommand(&channelCrawlCmd)
 }
