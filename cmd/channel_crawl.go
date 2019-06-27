@@ -47,7 +47,7 @@ func doChannelCrawl(_ *cobra.Command, args []string) (err error) {
 		CleanWindow:        0,
 		MaxEntriesInWindow: 1000 * 10 * 60,
 		MaxEntrySize:       500,
-		HardMaxCacheSize:   1e8, // 100 MB
+		HardMaxCacheSize:   1e7, // 10 MB
 	})
 	if err != nil {
 		logrus.WithError(err).Fatal("Failed to init bigcache")
@@ -105,7 +105,7 @@ func (d *channelDump) getNextID() (s string, ok bool) {
 	d.queueLock.Lock()
 	defer d.queueLock.Unlock()
 
-	if len(d.queue) > 1000000 {
+	if len(d.queue) > 100000 {
 		// Queue too long do a snibbening
 		logrus.Warning("Truncating big queue")
 		d.queue = d.queue[500000:]
