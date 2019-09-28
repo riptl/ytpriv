@@ -1,15 +1,18 @@
 package apijson
 
 import (
+	"bytes"
 	"errors"
-	"github.com/terorie/yt-mango/api"
-	"github.com/terorie/yt-mango/data"
-	"github.com/valyala/fasthttp"
-	"github.com/valyala/fastjson"
+	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/terorie/yt-mango/api"
+	"github.com/terorie/yt-mango/data"
+	"github.com/valyala/fasthttp"
+	"github.com/valyala/fastjson"
 )
 
 var matchThumbUrl = regexp.MustCompile("^.+/hqdefault\\.jpg")
@@ -17,6 +20,13 @@ var matchThumbUrl = regexp.MustCompile("^.+/hqdefault\\.jpg")
 var unexpectedType = errors.New("unexpected type")
 
 func ParseVideo(v *data.Video, res *fasthttp.Response) error {
+	internal := new(videoData)
+	v.Internal = internal
+
+	if res.StatusCode() != fasthttp.StatusOK {
+		return fmt.Errorf("response status %d", res.StatusCode())
+	}
+
 	// Parse JSON
 	var p fastjson.Parser
 	root, err := p.ParseBytes(res.Body())
@@ -29,11 +39,13 @@ func ParseVideo(v *data.Video, res *fasthttp.Response) error {
 	var pageResponse *fastjson.Value
 	var playerResponse *fastjson.Value
 	var playerArgs *fastjson.Value
+	var xsrfToken string
 	for _, sub := range rootArray {
 		if playerResponse == nil {
 			playerResponse = sub.Get("playerResponse")
 			pageResponse = sub.Get("response")
 			v.URL = string(sub.GetStringBytes("url"))
+			xsrfToken = string(sub.GetStringBytes("xsrf_token"))
 		}
 		if playerArgs == nil {
 			playerArgs = sub.Get("player", "args")
@@ -73,6 +85,17 @@ func ParseVideo(v *data.Video, res *fasthttp.Response) error {
 	watchNextContents := watchNextResults.GetArray("results", "results", "contents")
 	if err := parseVideoInfo(v, watchNextContents);
 		err != nil { return err }
+
+	var visitorInfo, ysc, cookie string
+	var ok bool
+	visitorInfo, ok = parseSetCookie(res, "VISITOR_INFO1_LIVE")
+	if !ok { goto cookieFailed }
+	ysc, ok = parseSetCookie(res, "YSC")
+	if !ok { goto cookieFailed }
+	cookie = visitorInfo + "; " + ysc
+	parseCommentToken(internal, watchNextContents, cookie, xsrfToken)
+
+	cookieFailed:
 
 	// TODO secondaryResults
 
@@ -155,6 +178,9 @@ func parseVideoInfo(v *data.Video, videoInfo []*fastjson.Value) error {
 			secondary = obj.Get("videoSecondaryInfoRenderer")
 		}
 	}
+	if primary == nil || secondary == nil {
+		return fmt.Errorf("missing video info objects")
+	}
 
 	// Check unlisted status (from badges)
 	for _, badge := range primary.GetArray("badges") {
@@ -233,6 +259,25 @@ func parseVideoRelated(watchNextResults *fastjson.Value) []data.RelatedVideo {
 	return related
 }
 
+func parseCommentToken(data *videoData, contentList []*fastjson.Value, cookie string, xsrfToken string) {
+	for _, content := range contentList {
+		sectionIdentifier := string(content.GetStringBytes("itemSectionRenderer", "sectionIdentifier"))
+		if sectionIdentifier != "comment-item-section" {
+			continue
+		}
+		continuation := string(content.GetStringBytes("itemSectionRenderer", "continuations", "0", "nextContinuationData", "continuation"))
+		if continuation == "" {
+			continue
+		}
+		data.continuation = &CommentContinuation{
+			Cookie: cookie,
+			Token: continuation,
+			XSRF: xsrfToken,
+		}
+		return
+	}
+}
+
 func getVideoRendererUploader(renderer *fastjson.Value) string {
 	channelRuns := renderer.GetArray("longBylineText", "runs")
 	for _, run := range channelRuns {
@@ -243,4 +288,25 @@ func getVideoRendererUploader(renderer *fastjson.Value) string {
 		}
 	}
 	return ""
+}
+
+func InitialCommentContinuation(v *data.Video) *CommentContinuation {
+	videoData, ok := v.Internal.(*videoData)
+	if !ok {
+		return nil
+	}
+	return videoData.continuation
+}
+
+func parseSetCookie(res *fasthttp.Response, field string) (cookie string, ok bool) {
+	cookieBytes := res.Header.PeekCookie(field)
+	i := bytes.IndexByte(cookieBytes, ';')
+	if i < 0 {
+		return "", false
+	}
+	return string(cookieBytes[:i]), true
+}
+
+type videoData struct {
+	continuation *CommentContinuation
 }

@@ -39,6 +39,9 @@ type Video struct {
 	Likes uint64 `json:"likes"`
 	Dislikes uint64 `json:"dislikes"`
 	RelatedVideos []RelatedVideo `json:"related"`
+
+	// Internal tokens
+	Internal interface{} `json:"-"`
 }
 
 type RelatedVideo struct {
