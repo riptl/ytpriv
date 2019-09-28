@@ -1,0 +1,8 @@
+Dockerfile
+Makefile
+.travis.yml
+.editorconfig
+/elastic/
+.git/
+.idea/
+testing/
