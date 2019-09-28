@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"bufio"
-	"fmt"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/terorie/yt-mango/api"
@@ -10,115 +9,131 @@ import (
 	"github.com/terorie/yt-mango/net"
 	"github.com/valyala/fasthttp"
 	"os"
+	"sync"
 	"time"
 )
 
-var offset uint
-
-func init() {
-	channelDumpCmd.Flags().UintVar(&offset, "page-offset", 1, "Start getting videos at this page. (A page is usually 30 videos)")
-}
-
-// The shared context of the request and response threads
-var channelDumpContext = struct {
-	startTime time.Time
-	printResults bool
-	writer *bufio.Writer
-}{}
-
 // The channel dump route lists
 var channelDumpCmd = cobra.Command{
-	Use: "dumpurls <channel ID> [file]",
-	Short: "Get all public video URLs from channel",
-	Long: "Write all videos URLs of a channel to a file",
-	Args: cobra.RangeArgs(1, 2),
-	Run: cmdFunc(doChannelDump),
+	Use:   "dumpurls [channel ID...]",
+	Short: "Get all public video URLs from channels",
+	Long: "Takes in channel IDs and produces a list of video IDs uploaded by them.\n" +
+		"If no channel IDs are given as arguments, they are read from stdin.",
+	Args: cobra.ArbitraryArgs,
+	Run:  cmdFunc(doChannelDump),
 }
 
 func doChannelDump(_ *cobra.Command, args []string) error {
-	if offset == 0 { offset = 1 }
+	start := time.Now()
 
-	printResults := false
-	fileName := ""
-	channelID := args[0]
-	if len(args) != 2 {
-		printResults = true
+	// Create channel IDs channel
+	channelIDs := make(chan string)
+	if len(args) == 0 {
+		// Read channel IDs from stdin
+		go func() {
+			defer close(channelIDs)
+			scn := bufio.NewScanner(os.Stdin)
+			for scn.Scan() {
+				line := scn.Text()
+				channelID, err := api.GetChannelID(line)
+				if err != nil {
+					log.Error(err)
+				}
+				channelIDs <- channelID
+			}
+		}()
 	} else {
-		fileName = args[1]
+		// Copy channel IDs from arguments
+		go func() {
+			defer close(channelIDs)
+			for _, _url := range args {
+				channelID, err := api.GetChannelID(_url)
+				if err != nil {
+					log.Error(err)
+				}
+				channelIDs <- channelID
+			}
+		}()
 	}
-	channelDumpContext.printResults = printResults
 
+	// Create videoIDs from channel IDs
+	wr := bufio.NewWriter(os.Stdout)
+	videoIDs := make(chan string)
+	go channelDumpScheduler(videoIDs, channelIDs)
+	for videoID := range videoIDs {
+		// Avoid fmt newline flushes
+		_, _ = wr.WriteString(videoID)
+		_ = wr.WriteByte('\n')
+	}
+
+	log.Infof("Finished after %s", time.Since(start).String())
+
+	return nil
+}
+
+func channelDumpScheduler(videoIDs chan<- string, channelIDs <-chan string) {
+	var wg sync.WaitGroup
+	wg.Add(int(net.MaxWorkers))
+	for i := uint(0); i < net.MaxWorkers; i++ {
+		go func() {
+			defer wg.Done()
+			for channelID := range channelIDs {
+				log.Infof("Dumping channel %s", channelID)
+				err := dumpChannel(channelID, videoIDs)
+				if err != nil {
+					log.WithError(err).Errorf("Failed to dump channel %s", channelID)
+				}
+			}
+		}()
+	}
+	wg.Wait()
+	close(videoIDs)
+}
+
+func dumpChannel(channelID string, videoIDs chan<- string) error {
 	channelID, err := api.GetChannelID(channelID)
 	if err != nil { return err }
 
-	log.Infof("Starting work on channel ID \"%s\".", channelID)
-	channelDumpContext.startTime = time.Now()
-
-	var flags int
-	if force {
-		flags = os.O_WRONLY | os.O_CREATE | os.O_TRUNC
-	} else {
-		flags = os.O_WRONLY | os.O_CREATE | os.O_EXCL
-	}
-
-	var file *os.File
-
-	if !printResults {
-		var err error
-		file, err = os.OpenFile(fileName, flags, 0640)
-		if err != nil { return err }
-		defer file.Close()
-
-		writer := bufio.NewWriter(file)
-		defer writer.Flush()
-		channelDumpContext.writer = writer
-	}
-
-	page := offset
+	page := uint(0)
 	totalURLs := 0
 
 	for {
 		// Request next page
 		req := apis.Main.GrabChannelPage(channelID, page)
-
 		res := fasthttp.AcquireResponse()
-		// TODO defer fasthttp.ReleaseResponse(res)
 
 		err := net.Client.Do(req, res)
+		fasthttp.ReleaseRequest(req)
 		if err != nil {
 			log.Errorf("Error at page %d: %v", page, err)
 			break
 		}
 
 		// Parse response
-		channelURLs, err := apis.Main.ParseChannelVideoURLs(res)
+		videoURLs, err := apis.Main.ParseChannelVideoURLs(res)
+		fasthttp.ReleaseResponse(res)
 		if err != nil { return err }
 
 		// Stop if page is empty
-		if len(channelURLs) == 0 { break }
+		if len(videoURLs) == 0 { break }
 
 		// Print results
-		log.Infof("Received page %d: %d videos.",
-			page, len(channelURLs))
+		log.WithFields(log.Fields{
+			"channel": channelID,
+			"page":    page,
+			"videos":  len(videoURLs),
+		}).Info("Got page")
 
-		if channelDumpContext.printResults {
-			for _, _url := range channelURLs {
-				fmt.Println(_url)
+		for _, _url := range videoURLs {
+			videoID, err := api.GetVideoID(_url)
+			if err != nil {
+				log.WithError(err).Warn("Got invalid video URL")
 			}
-		} else {
-			for _, _url := range channelURLs {
-				_, err := channelDumpContext.writer.WriteString(_url + "\n")
-				if err != nil { panic(err) }
-			}
+			videoIDs <- videoID
 		}
 
-		totalURLs += len(channelURLs)
+		totalURLs += len(videoURLs)
 		page++
 	}
-
-	duration := time.Since(channelDumpContext.startTime)
-	log.Infof("Got %d URLs in %s.", totalURLs, duration.String())
-	os.Exit(0)
-
 	return nil
 }
