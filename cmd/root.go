@@ -43,13 +43,14 @@ func init() {
 
 func rootPreRun(_ *cobra.Command, _ []string) {
 	net.MaxWorkers = concurrentRequests
+	net.Client.MaxConnsPerHost = int(concurrentRequests)
 
 	switch forceAPI {
 	case "": apis.Main = &apis.TempAPI
 	case "classic": apis.Main = &apis.ClassicAPI
 	case "json": apis.Main = &apis.JsonAPI
 	default:
-		fmt.Fprintln(os.Stderr, "Invalid API specified.\n" +
+		fmt.Fprintln(os.Stderr, "Invalid API specified.\n"+
 			"Valid options are: \"classic\" and \"json\"")
 		os.Exit(1)
 	}
