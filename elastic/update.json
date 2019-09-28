@@ -1,0 +1,27 @@
+{
+  "script": {
+    "id": "comment-upsert",
+    "params": {
+      "created_before": 0,
+      "created_after": 0,
+      "crawled_at": 0,
+      "likes": 999,
+      "replies": 999
+    }
+  },
+  "upsert": {
+    "video_id": "",
+    "author_id": "",
+    "by_channel_owner": false,
+    "parent_id": "",
+    "created_before": "",
+    "created_after": "",
+    "author": "",
+    "content": [],
+    "edited": false,
+    "first_seen": 0,
+    "crawled_at": 0,
+    "likes": 0,
+    "replies": 0
+  }
+}
