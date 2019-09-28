@@ -1,7 +1,14 @@
 package cmd
 
 import (
+	"context"
 	"encoding/json"
+	"os"
+	"strconv"
+	"sync"
+	"sync/atomic"
+	"time"
+
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/terorie/yt-mango/api"
@@ -9,26 +16,21 @@ import (
 	"github.com/terorie/yt-mango/data"
 	"github.com/terorie/yt-mango/net"
 	"github.com/valyala/fasthttp"
-	"os"
-	"path/filepath"
-	"strconv"
-	"sync"
-	"sync/atomic"
-	"time"
 )
 
 var videoDumpCmd = cobra.Command{
-	Use: "dump <n> <path> <video>",
+	Use: "dump <n> <video>",
 	Short: "Get a data set of videos",
 	Long: "Loads n video metadata files to the\n" +
 		"specified path starting at the root video.\n" +
-		"The videos are saved as \"<video_id>.json\".",
-	Args: cobra.MinimumNArgs(3),
+		"The videos are written to stdout as ndjson.",
+	Args: cobra.MinimumNArgs(2),
 	Run: cmdFunc(doVideoDump),
 }
 
 type videoDump struct{
-	path           string
+	ctx            context.Context
+	out            chan data.Video
 	left           int32
 	found          sync.Map
 	queueLock      sync.Mutex
@@ -41,13 +43,9 @@ func doVideoDump(_ *cobra.Command, args []string) (err error) {
 	startTime := time.Now()
 
 	nStr := args[0]
-	path := args[1]
-	startIDs := args[2:]
+	startIDs := args[1:]
 
 	toDownload, err := strconv.ParseUint(nStr, 10, 31)
-	if err != nil { return }
-
-	err = os.Mkdir(path, 0755)
 	if err != nil { return }
 
 	for i, url := range startIDs {
@@ -56,11 +54,12 @@ func doVideoDump(_ *cobra.Command, args []string) (err error) {
 	}
 
 	d := videoDump{
-		path:     path,
+		out:      make(chan data.Video),
 		left:     int32(toDownload),
 		queue:    startIDs,
 		foundAll: 0,
 	}
+	go d.writer()
 
 	// Spawn workers
 	for i := 0; i < int(net.MaxWorkers); i++ {
@@ -83,6 +82,7 @@ func doVideoDump(_ *cobra.Command, args []string) (err error) {
 
 	// Wait for routines to finish
 	d.activeRoutines.Wait()
+	close(d.out)
 
 	// Print success message
 	logrus.Infof("Downloaded %d videos in %s",
@@ -90,6 +90,16 @@ func doVideoDump(_ *cobra.Command, args []string) (err error) {
 		time.Since(startTime).String())
 
 	return nil
+}
+
+func (d *videoDump) writer() {
+	enc := json.NewEncoder(os.Stdout)
+	for vid := range d.out {
+		err := enc.Encode(&vid)
+		if err != nil {
+			logrus.WithError(err).Fatal("Output stream aborted")
+		}
+	}
 }
 
 func (d *videoDump) getNextID() (s string, ok bool) {
@@ -172,26 +182,8 @@ func (d *videoDump) videoDumpSingle(videoId string) (success bool) {
 		d.queueLock.Unlock()
 	}
 
-	// Open file
-	vidPath := filepath.Join(d.path, videoId + ".json")
-	file, err := os.OpenFile(
-		vidPath,
-		os.O_CREATE | os.O_EXCL | os.O_WRONLY,
-		0644,
-	)
-	if err != nil {
-		logrus.WithError(err).
-			WithField("path", vidPath).
-			Error("Failed to create file")
-	}
-	defer file.Close()
-
-	// Save video to JSON
-	enc := json.NewEncoder(file)
-	enc.SetIndent("", "\t")
-	err = enc.Encode(&v)
-	if err != nil { return }
-
+	// Send video to writer
+	d.out <- v
 	logrus.WithField("id", videoId).Debug("Got video")
 
 	success = true
