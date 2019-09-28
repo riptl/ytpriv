@@ -44,7 +44,6 @@ func ParseVideo(v *data.Video, res *fasthttp.Response) error {
 		if playerResponse == nil {
 			playerResponse = sub.Get("playerResponse")
 			pageResponse = sub.Get("response")
-			v.URL = string(sub.GetStringBytes("url"))
 			xsrfToken = string(sub.GetStringBytes("xsrf_token"))
 		}
 		if playerArgs == nil {
@@ -52,7 +51,6 @@ func ParseVideo(v *data.Video, res *fasthttp.Response) error {
 		}
 	}
 
-	if v.URL != "" { v.URL = "https://www.youtube.com" + v.URL }
 	if playerResponse == nil { return errors.New("no video details") }
 
 	// Playability status
@@ -95,7 +93,7 @@ func ParseVideo(v *data.Video, res *fasthttp.Response) error {
 	cookie = visitorInfo + "; " + ysc
 	parseCommentToken(internal, watchNextContents, cookie, xsrfToken)
 
-	cookieFailed:
+cookieFailed:
 
 	// TODO secondaryResults
 
@@ -138,9 +136,6 @@ func parseVideoDetails(v *data.Video, videoDetails *fastjson.Value) error {
 	v.Description = string(videoDetails.GetStringBytes("shortDescription"))
 	// Get channel ID
 	v.UploaderID = string(videoDetails.GetStringBytes("channelId"))
-	if v.UploaderID != "" {
-		v.UploaderURL = "https://www.youtube.com/channel/" + v.UploaderID
-	}
 	// Get author
 	v.Uploader = string(videoDetails.GetStringBytes("author"))
 	// Ratings allowed?
@@ -208,7 +203,7 @@ func parseVideoInfo(v *data.Video, videoInfo []*fastjson.Value) error {
 	dateText = strings.TrimPrefix(dateText, "Streamed live on ")
 
 	date, err := time.Parse("Jan _2, 2006", dateText)
-	if err == nil { v.UploadDate = date }
+	if err == nil { v.Uploaded = date.Unix() }
 
 	// Get category
 	// Find category row
@@ -249,7 +244,6 @@ func parseVideoRelated(watchNextResults *fastjson.Value) []data.RelatedVideo {
 
 		if uploaderID != "" {
 			vid.UploaderID = uploaderID
-			vid.UploaderURL = "https://www.youtube.com/channel/" + uploaderID
 		}
 
 		if videoId != "" {
@@ -271,8 +265,8 @@ func parseCommentToken(data *videoData, contentList []*fastjson.Value, cookie st
 		}
 		data.continuation = &CommentContinuation{
 			Cookie: cookie,
-			Token: continuation,
-			XSRF: xsrfToken,
+			Token:  continuation,
+			XSRF:   xsrfToken,
 		}
 		return
 	}

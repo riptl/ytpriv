@@ -19,16 +19,16 @@ import (
 )
 
 var videoDumpCmd = cobra.Command{
-	Use: "dump <n> <video>",
+	Use:   "dump <n> <video>",
 	Short: "Get a data set of videos",
 	Long: "Loads n video metadata files to the\n" +
 		"specified path starting at the root video.\n" +
 		"The videos are written to stdout as ndjson.",
 	Args: cobra.MinimumNArgs(2),
-	Run: cmdFunc(doVideoDump),
+	Run:  cmdFunc(doVideoDump),
 }
 
-type videoDump struct{
+type videoDump struct {
 	ctx            context.Context
 	out            chan data.Video
 	left           int32
@@ -72,8 +72,7 @@ func doVideoDump(_ *cobra.Command, args []string) (err error) {
 		for range time.NewTicker(time.Second).C {
 			_left := atomic.LoadInt32(&d.left)
 			if _left != 0 {
-				logrus.WithField("left", _left).
-					Infof("%d videos left", _left)
+				logrus.WithField("left", _left).Info("Progress")
 			} else {
 				break
 			}

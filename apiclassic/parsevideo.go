@@ -37,8 +37,8 @@ func ParseVideo(v *data.Video, res *fasthttp.Response) (err error) {
 }
 
 type parseVideoInfo struct {
-	v *data.Video
-	doc *goquery.Document
+	v          *data.Video
+	doc        *goquery.Document
 	restricted bool
 }
 
@@ -114,7 +114,6 @@ func (p *parseVideoInfo) parseUploader() error {
 	// get link
 	userLink, _ := userLinkNode.Attr("href")
 	if userLink == "" { return errors.New("couldn't find channel link") }
-	p.v.UploaderURL = "https://www.youtube.com" + userLink
 
 	// get name
 	channelName := userInfo.Find(channelNameSelector).Text()
@@ -124,7 +123,7 @@ func (p *parseVideoInfo) parseUploader() error {
 }
 
 func (p *parseVideoInfo) parseMetas() (err error) {
-	enumMetas(p.doc.Selection, func(tag metaTag)bool {
+	enumMetas(p.doc.Selection, func(tag metaTag) bool {
 		content := tag.content
 		switch tag.typ {
 		case metaProperty:
@@ -145,7 +144,7 @@ func (p *parseVideoInfo) parseMetas() (err error) {
 			switch tag.name {
 			case "datePublished":
 				if val, err := time.Parse("2006-01-02", content);
-					err == nil { p.v.UploadDate = val }
+					err == nil { p.v.Uploaded = val.Unix() }
 			case "genre":
 				p.v.Genre = content
 			case "channelId":
