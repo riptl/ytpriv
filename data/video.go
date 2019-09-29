@@ -22,11 +22,11 @@ type Video struct {
 
 	// Privacy settings
 	Visibility       VisibilitySetting `json:"visibility"`
-	NoComments       bool              `json:"no_comments"`
-	NoRatings        bool              `json:"no_ratings"`
-	NoEmbed          bool              `json:"no_embed"`
-	ProductPlacement bool              `json:"product_placement"`
-	WatchStatistics  bool              `json:"watch_statistics"`
+	NoComments       bool              `json:"no_comments,omitempty"`
+	NoRatings        bool              `json:"no_ratings,omitempty"`
+	NoEmbed          bool              `json:"no_embed,omitempty"`
+	ProductPlacement bool              `json:"product_placement,omitempty"`
+	WatchStatistics  bool              `json:"watch_statistics,omitempty"`
 
 	// Dynamic stats
 	Views         uint64         `json:"views"`
