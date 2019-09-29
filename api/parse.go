@@ -2,12 +2,12 @@ package api
 
 import (
 	"errors"
+	"github.com/sirupsen/logrus"
 	"strconv"
 	"strings"
 )
 
 var durationErr = errors.New("unknown duration code")
-var fmtListErr = errors.New("malformed format list")
 var noFmtErr = errors.New("unknown format")
 
 // "137,802 views" => 137802
@@ -44,7 +44,11 @@ func ParseFormatList(fmtStr string) (fmtList []string, _ error) {
 	fmts := strings.Split(fmtStr, ",")
 	for _, fmt := range fmts {
 		parts := strings.Split(fmt, "/")
-		if len(parts) != 2 { return nil, fmtListErr }
+		// FIXME PROPERLY PARSE THIS
+		if len(parts) != 2 {
+			logrus.Warnf("Malformed format: %s", fmt)
+			continue
+		}
 		formatID := parts[0]
 		fmtList = append(fmtList, formatID)
 	}
