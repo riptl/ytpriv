@@ -1,10 +1,10 @@
 package cmd
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"os"
-	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -19,128 +19,168 @@ import (
 )
 
 var videoDumpCmd = cobra.Command{
-	Use:   "dump <n> <video>",
+	Use:   "dump [video...]",
 	Short: "Get a data set of videos",
-	Long: "Loads n video metadata files to the\n" +
-		"specified path starting at the root video.\n" +
-		"The videos are written to stdout as ndjson.",
-	Args: cobra.MinimumNArgs(2),
+	Long: "Dumps video metadata of specified video URLs.\n" +
+		"If no videos are given as arguments, they are read from stdin.\n" +
+		"The metadata is written to stdout as ndjson.",
+	Args: cobra.ArbitraryArgs,
 	Run:  cmdFunc(doVideoDump),
+}
+
+func init() {
+	flags := videoDumpCmd.Flags()
+	flags.UintP("num-related", "n", 0,
+		"Number of videos to crawl from the related videos tab")
+	flags.StringP("related-list", "r", "",
+		"List of related videos that weren't crawled")
 }
 
 type videoDump struct {
 	ctx            context.Context
-	out            chan data.Video
-	left           int32
 	found          sync.Map
 	queueLock      sync.Mutex
 	queue          []string
-	foundAll       int32
 	activeRoutines sync.WaitGroup
+	count          int64
 }
 
-func doVideoDump(_ *cobra.Command, args []string) (err error) {
+func doVideoDump(c *cobra.Command, args []string) (err error) {
 	startTime := time.Now()
 
-	nStr := args[0]
-	startIDs := args[1:]
+	videoIDs := make(chan string)
+	videos := make(chan data.Video)
 
-	toDownload, err := strconv.ParseUint(nStr, 10, 31)
-	if err != nil { return }
+	flags := c.Flags()
+	nRelated, err := flags.GetUint("num-related")
+	if err != nil { return err }
+	relatedList, err := flags.GetString("related-list")
+	if err != nil { return err }
 
-	for i, url := range startIDs {
-		startIDs[i], err = api.GetVideoID(url)
-		if err != nil { return }
-	}
-
-	d := videoDump{
-		out:      make(chan data.Video),
-		left:     int32(toDownload),
-		queue:    startIDs,
-		foundAll: 0,
-	}
-	go d.writer()
+	var d videoDump
+	go d.loadIDs(videoIDs, args, nRelated)
 
 	// Spawn workers
+	d.activeRoutines.Add(int(net.MaxWorkers))
 	for i := 0; i < int(net.MaxWorkers); i++ {
-		d.activeRoutines.Add(1)
-		go d.videoDumpWorker()
+		go d.videoDumpWorker(videos, videoIDs)
 	}
 
 	// Print stats
 	go func() {
-		for range time.NewTicker(time.Second).C {
-			_left := atomic.LoadInt32(&d.left)
-			if _left != 0 {
-				logrus.WithField("left", _left).Info("Progress")
-			} else {
-				break
-			}
+		for range time.Tick(time.Second) {
+			logrus.WithField("count", atomic.LoadInt64(&d.count)).Info("Progress")
+		}
+	}()
+
+	// ndjson output
+	go func() {
+		enc := json.NewEncoder(os.Stdout)
+		for video := range videos {
+			_ = enc.Encode(&video)
 		}
 	}()
 
 	// Wait for routines to finish
 	d.activeRoutines.Wait()
-	close(d.out)
+	close(videos)
 
 	// Print success message
 	logrus.Infof("Downloaded %d videos in %s",
-		toDownload,
+		atomic.LoadInt64(&d.count),
 		time.Since(startTime).String())
+
+	// Write related videos list
+	if relatedList != "" {
+		f, err := os.Create(relatedList)
+		if err != nil {
+			logrus.WithError(err).Error("Failed to create related list")
+			return err
+		}
+		defer f.Close()
+		bf := bufio.NewWriter(f)
+		defer bf.Flush()
+
+		d.queueLock.Lock()
+		for _, id := range d.queue {
+			_, _ = bf.WriteString(id)
+			err := bf.WriteByte('\n')
+			if err != nil {
+				logrus.WithError(err).Error("Failed to write related list")
+				return err
+			}
+		}
+		d.queueLock.Unlock()
+
+		logrus.Info("Wrote related list")
+	}
+
 
 	return nil
 }
 
-func (d *videoDump) writer() {
-	enc := json.NewEncoder(os.Stdout)
-	for vid := range d.out {
-		err := enc.Encode(&vid)
-		if err != nil {
-			logrus.WithError(err).Fatal("Output stream aborted")
+func (d *videoDump) loadIDs(videoIDs chan<- string, args []string, nRelated uint) {
+	defer close(videoIDs)
+
+	// Read seed IDs
+	if len(args) == 0 {
+		scn := bufio.NewScanner(os.Stdin)
+		for scn.Scan() {
+			line := scn.Text()
+			videoID, err := api.GetVideoID(line)
+			if err != nil {
+				logrus.Error(err)
+				continue
+			}
+			videoIDs <- videoID
 		}
-	}
-}
-
-func (d *videoDump) getNextID() (s string, ok bool) {
-	d.queueLock.Lock()
-	defer d.queueLock.Unlock()
-
-	if len(d.queue) > 0 {
-		ok = true
-		s = d.queue[0]
-		d.queue = d.queue[1:]
 	} else {
-		ok = false
+		for _, arg := range args {
+			videoID, err := api.GetVideoID(arg)
+			if err != nil {
+				logrus.Error(err)
+			}
+			videoIDs <- videoID
+		}
 	}
-	return
-}
 
-func (d *videoDump) videoDumpWorker() {
-	defer d.activeRoutines.Done()
+	// Pop off queue
+	for i := uint(0); i < nRelated; i++ {
+		var s string
+		var ok bool
 
-	for {
-		// Check if all videos loaded
-		if atomic.LoadInt32(&d.left) == 0 { return }
+		d.queueLock.Lock()
+		if len(d.queue) > 0 {
+			ok = true
+			s = d.queue[0]
+			d.queue = d.queue[1:]
+		} else {
+			ok = false
+		}
+		d.queueLock.Unlock()
 
-		videoId, ok := d.getNextID()
 		if !ok {
-			time.Sleep(500 * time.Millisecond)
-			continue
+			logrus.Warnf("Not enough videos found (%d missing)",
+				nRelated - i - 1)
+			return
 		}
 
-		// Update videos left counter
-		if atomic.AddInt32(&d.left, -1) <= 0 { return }
+		videoIDs <- s
+	}
+}
 
-		if !d.videoDumpSingle(videoId) {
-			// Increment videos left counter back again
-			atomic.AddInt32(&d.left, +1)
+func (d *videoDump) videoDumpWorker(videos chan<- data.Video, videoIDs <-chan string) {
+	defer d.activeRoutines.Done()
+	for videoID := range videoIDs {
+		v, ok := d.videoDumpSingle(videoID)
+		if ok {
+			videos <- v
+			atomic.AddInt64(&d.count, 1)
 		}
 	}
 }
 
-func (d *videoDump) videoDumpSingle(videoId string) (success bool) {
-	success = false
-
+func (d *videoDump) videoDumpSingle(videoId string) (v data.Video, ok bool) {
 	// Download video info
 	req := apis.Main.GrabVideo(videoId)
 
@@ -155,7 +195,6 @@ func (d *videoDump) videoDumpSingle(videoId string) (success bool) {
 		return
 	}
 
-	var v data.Video
 	v.ID = videoId
 
 	// Parse video
@@ -174,17 +213,12 @@ func (d *videoDump) videoDumpSingle(videoId string) (success bool) {
 		}
 	}
 
-	// Add newly found video IDs
-	if atomic.LoadInt32(&d.foundAll) == 0 {
-		d.queueLock.Lock()
-		d.queue = append(d.queue, newIDs...)
-		d.queueLock.Unlock()
-	}
+	d.queueLock.Lock()
+	d.queue = append(d.queue, newIDs...)
+	d.queueLock.Unlock()
 
 	// Send video to writer
-	d.out <- v
 	logrus.WithField("id", videoId).Debug("Got video")
 
-	success = true
-	return
+	return v, true
 }
