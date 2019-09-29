@@ -38,6 +38,7 @@ func doChannelDump(_ *cobra.Command, args []string) error {
 				channelID, err := api.GetChannelID(line)
 				if err != nil {
 					log.Error(err)
+					continue
 				}
 				channelIDs <- channelID
 			}
@@ -50,6 +51,7 @@ func doChannelDump(_ *cobra.Command, args []string) error {
 				channelID, err := api.GetChannelID(_url)
 				if err != nil {
 					log.Error(err)
+					continue
 				}
 				channelIDs <- channelID
 			}
