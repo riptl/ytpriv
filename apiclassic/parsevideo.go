@@ -132,8 +132,6 @@ func (p *parseVideoInfo) parseMetas() (err error) {
 				p.v.Title = content
 			case "og:video:tag":
 				p.v.Tags = append(p.v.Tags, content)
-			case "og:image":
-				p.v.Thumbnail = content
 			}
 		case metaName:
 			switch tag.name {

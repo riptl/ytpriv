@@ -12,7 +12,6 @@ type Video struct {
 	Uploader       string      `json:"uploader"` // The channel name can change
 	Title          string      `json:"title"`
 	Description    string      `json:"description"`
-	Thumbnail      string      `json:"thumbnail"`
 	License        string      `json:"license,omitempty"`
 	Genre          string      `json:"genre"`
 	Tags           []string    `json:"tags,omitempty"`

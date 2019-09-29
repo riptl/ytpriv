@@ -149,15 +149,6 @@ func parseVideoDetails(v *data.Video, videoDetails *fastjson.Value) error {
 	length64, err := strconv.ParseUint(lengthStr, 10, 64)
 	if err == nil { v.Duration = length64 }
 
-	// Get thumbnail URL
-	thumbUrl := string(videoDetails.GetStringBytes("thumbnail", "thumbnails", "0", "url"))
-	if thumbUrl != "" {
-		indices := matchThumbUrl.FindStringIndex(thumbUrl)
-		if len(indices) == 2 {
-			v.Thumbnail = thumbUrl[indices[0]:indices[1]]
-		}
-	}
-
 	return nil
 }
 
