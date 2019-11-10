@@ -9,7 +9,7 @@ import (
 	"os"
 )
 
-const Version = "v0.2 -- dev"
+const Version = "v0.3 -- dev"
 
 var forceAPI string
 var concurrentRequests uint
@@ -36,6 +36,8 @@ func init() {
 	pf.StringVarP(&logLevel, "log-level", "l", "",
 		"Log level. Valid options are:\n" +
 		"{debug, info, warn, error, fatal, panic}")
+	pf.StringVar(&net.Client.Name, "user-agent", "yt-mango/0.1",
+		"HTTP client user-agent")
 
 	Root.AddCommand(&Channel)
 	Root.AddCommand(&Video)

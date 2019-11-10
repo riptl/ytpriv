@@ -31,7 +31,8 @@ func ParseCommentsPage(res *fasthttp.Response, cont *CommentContinuation) (page 
 		objBlob = root.Get("response", "continuationContents", "commentRepliesContinuation", "contents")
 	}
 	if objBlob == nil {
-		return page, fmt.Errorf("no continuation contents found")
+		// no continuation contents found
+		return page, nil
 	}
 	objArray, err := objBlob.Array()
 	if err != nil {
@@ -71,6 +72,7 @@ func ParseCommentsPage(res *fasthttp.Response, cont *CommentContinuation) (page 
 		token := string(contObj.GetStringBytes("continuation", "reloadContinuationData", "continuation"))
 		title := contObj.GetStringBytes("title")
 		otherCont := &CommentContinuation{
+			VideoID:  cont.VideoID,
 			ParentID: cont.ParentID,
 			Cookie:   cont.Cookie,
 			Token:    token,
@@ -130,19 +132,15 @@ func parseComment(c *data.Comment, obj *fastjson.Value) error {
 	c.AuthorID = string(authorEndPoint.GetStringBytes("browseId"))
 
 	// Comment text
-	/*var builder strings.Builder
-	contentText := obj.GetArray("contentText", "runs")
-	for _, run := range contentText {
-		text := string(run.GetStringBytes("text"))
-		if strings.TrimSpace(text) != "" {
-			builder.WriteString(text)
-		}
-		builder.WriteByte('\n')
-	}
-	c.Text = builder.String()*/
 	contentText := obj.Get("contentText", "runs")
 	if contentText == nil {
 		return fmt.Errorf("no text found")
+	}
+	for _, line := range contentText.GetArray() {
+		if nav := line.Get("navigationEndpoint"); nav != nil {
+			nav.Del("clickTrackingParams")
+			nav.Del("commandMetadata")
+		}
 	}
 	c.Content = contentText.MarshalTo(nil)
 
@@ -174,6 +172,7 @@ func CommentRepliesContinuation(c *data.Comment, prev *CommentContinuation) *Com
 		return nil
 	}
 	return &CommentContinuation{
+		VideoID:  prev.VideoID,
 		ParentID: commentData.continuation.ParentID,
 		Cookie:   prev.Cookie,
 		Token:    commentData.continuation.Token,
@@ -209,9 +208,9 @@ func parsePublishedTime(str string) (after int64, before int64, err error) {
 		precision = 7 * 24 * time.Hour
 	// TODO More accurate interval
 	case strings.HasPrefix(parts[1], "month"):
-		precision = 30 * 7 * 24 * time.Hour
+		precision = 30 * 24 * time.Hour
 	case strings.HasPrefix(parts[1], "year"):
-		precision = 365 * 7 * 24 * time.Hour
+		precision = 365 * 24 * time.Hour
 	default:
 		err = fmt.Errorf("unknown precision: %s", precision)
 		return
@@ -233,6 +232,7 @@ type CommentPage struct {
 }
 
 type CommentContinuation struct {
+	VideoID string
 	ParentID string
 	Cookie string
 	Token  string

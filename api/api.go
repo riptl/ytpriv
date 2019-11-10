@@ -11,9 +11,6 @@ type API struct {
 	// Parse a response with a video page into a video struct
 	ParseVideo func(*data.Video, *fasthttp.Response) error
 
-	GrabVideoSubtitleList func(videoID string) *fasthttp.Request
-	ParseVideoSubtitleList func(*data.Video, *fasthttp.Response) error
-
 	GrabChannel func(channelID string) *fasthttp.Request
 	ParseChannel func(*data.Channel, *fasthttp.Response) error
 

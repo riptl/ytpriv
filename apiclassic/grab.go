@@ -19,7 +19,7 @@ func GrabVideo(videoID string) *fasthttp.Request {
 	return req
 }
 
-func GrabSubtitleList(videoID string) (tracks *XMLSubTrackList, err error) {
+func GrabVideoSubtitleList(videoID string) (tracks *XMLSubTrackList, err error) {
 	req := fasthttp.AcquireRequest()
 	defer fasthttp.ReleaseRequest(req)
 

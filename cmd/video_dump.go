@@ -18,6 +18,8 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
+// TODO Wait for helper programs to exit
+
 var videoDumpCmd = cobra.Command{
 	Use:   "dump [video...]",
 	Short: "Get a data set of videos",
@@ -115,34 +117,25 @@ func doVideoDump(c *cobra.Command, args []string) (err error) {
 		logrus.Info("Wrote related list")
 	}
 
-
 	return nil
 }
 
 func (d *videoDump) loadIDs(videoIDs chan<- string, args []string, nRelated uint) {
 	defer close(videoIDs)
 
-	// Read seed IDs
-	if len(args) == 0 {
-		scn := bufio.NewScanner(os.Stdin)
-		for scn.Scan() {
-			line := scn.Text()
-			videoID, err := api.GetVideoID(line)
+	// Create argument channels
+	jobs := make(chan string)
+	go stdinOrArgs(jobs, args)
+	go func() {
+		for job := range jobs {
+			videoID, err := api.GetVideoID(job)
 			if err != nil {
 				logrus.Error(err)
 				continue
 			}
 			videoIDs <- videoID
 		}
-	} else {
-		for _, arg := range args {
-			videoID, err := api.GetVideoID(arg)
-			if err != nil {
-				logrus.Error(err)
-			}
-			videoIDs <- videoID
-		}
-	}
+	}()
 
 	// Pop off queue
 	for i := uint(0); i < nRelated; i++ {

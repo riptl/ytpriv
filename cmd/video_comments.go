@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -19,29 +20,84 @@ import (
 var continuationLimitReached = fmt.Errorf("continuation limit reached")
 
 var videoCommentsCmd = cobra.Command{
-	Use: "comments <video>",
-	Short: "Scrape comments on a video",
-	Args: cobra.ExactArgs(1),
+	Use: "comments [video...]",
+	Short: "Scrape comments of videos",
+	Args: cobra.ArbitraryArgs,
 	Run: cmdFunc(doVideoComments),
 }
 
 func init() {
-	flags := videoCommentsCmd.Flags()
-	flags.StringP("sort", "s", "top", `"top": sort by likes, "age": new to old, "live": newest page (infinite)`)
-}
-
-type videoCommentsJob struct {
-	wg sync.WaitGroup
-	comments chan data.Comment
+	f := videoCommentsCmd.Flags()
+	f.Duration("slow-start", time.Second, "Time to wait between opening connections")
 }
 
 func doVideoComments(c *cobra.Command, args []string) error {
 	if apis.Main != &apis.JsonAPI {
 		return fmt.Errorf("only JSON API supported")
 	}
+	start := time.Now()
+	defer func() {
+		logrus.Infof("Finished after %s", time.Since(start).String())
+	}()
 
-	videoID := args[0]
+	// Create argument channels
+	jobs := make(chan string)
+	go stdinOrArgs(jobs, args)
+	videoIDs := make(chan string)
+	go func() {
+		defer close(videoIDs)
+		for job := range jobs {
+			videoID, err := api.GetVideoID(job)
+			if err != nil {
+				logrus.Error(err)
+				continue
+			}
+			videoIDs <- videoID
+		}
+	}()
 
+	// Dump comments
+	comments := make(chan data.Comment)
+	startDelay, err := c.Flags().GetDuration("slow-start")
+	if err != nil {
+		panic(err)
+	}
+	go videoCommentDumpScheduler(comments, videoIDs, startDelay)
+	enc := json.NewEncoder(os.Stdout)
+	commentCount := int64(0)
+	for comment := range comments {
+		if err := enc.Encode(&comment); err != nil {
+			return err
+		}
+		commentCount++
+	}
+	logrus.WithField("count", commentCount).Info("Success")
+
+	return nil
+}
+
+func videoCommentDumpScheduler(comments chan<- data.Comment, videoIDs <-chan string, startDelay time.Duration) {
+	defer close(comments)
+	var wg sync.WaitGroup
+	wg.Add(int(net.MaxWorkers))
+	for i := uint(0); i < net.MaxWorkers; i++ {
+		go func() {
+			defer wg.Done()
+			for videoID := range videoIDs {
+				logrus.WithField("video_id", videoID).
+					Info("Start video")
+				err := streamVideoComments(comments, videoID)
+				if err != nil {
+					logrus.WithError(err).Errorf("Failed to dump comments of video %s", videoID)
+				}
+			}
+		}()
+		time.Sleep(startDelay)
+	}
+	wg.Wait()
+}
+
+func streamVideoComments(comments chan<- data.Comment, videoID string) error {
 	videoID, err := api.GetVideoID(videoID)
 	if err != nil { return err }
 
@@ -53,35 +109,7 @@ func doVideoComments(c *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to request comments")
 	}
 
-	j := videoCommentsJob{
-		comments: make(chan data.Comment),
-	}
-	j.wg.Add(1)
-
-	sortFlag, err := c.Flags().GetString("sort")
-	if err != nil {
-		return err
-	}
-	switch sortFlag {
-	case "top":
-		go j.streamComments(cont)
-	case "age":
-		go j.streamNewComments(cont)
-	case "live":
-		go j.streamLiveComments(cont)
-	default:
-		return fmt.Errorf("unknown sort order: %s", sortFlag)
-	}
-	go func() {
-		j.wg.Wait()
-		close(j.comments)
-	}()
-
-	enc := json.NewEncoder(os.Stdout)
-	for comment := range j.comments {
-		err := enc.Encode(&comment)
-		if err != nil { panic(err) }
-	}
+	streamNewComments(comments, cont)
 
 	return nil
 }
@@ -97,18 +125,28 @@ func simpleGetVideo(videoID string) (v *data.Video, err error) {
 
 	v = new(data.Video)
 	v.ID = videoID
-	err = apis.Main.ParseVideo(v, res)
-	if err != nil { return nil, err }
-
-	return
+	maxRetries := 2
+	for i := 0; i < maxRetries; i++ {
+		err = apis.Main.ParseVideo(v, res)
+		if err == apijson.ErrRateLimit {
+			logrus.WithField("video_id", videoID).Warnf("Rate-Limited (%d/%d)", i+1, maxRetries)
+			time.Sleep(time.Second)
+			continue
+		}
+		if err == nil {
+			return v, nil
+		} else {
+			return nil, err
+		}
+	}
+	return nil, apijson.ErrRateLimit
 }
 
-func (j *videoCommentsJob) streamComments(cont *apijson.CommentContinuation) {
-	defer j.wg.Done()
+func streamComments(comments chan<- data.Comment, cont *apijson.CommentContinuation) {
 	var err error
 	for i := 0; true; i++ {
 		var page apijson.CommentPage
-		page, err = j.nextCommentPage(cont, i)
+		page, err = nextCommentPage(cont, i)
 		if err != nil {
 			break
 		}
@@ -116,10 +154,9 @@ func (j *videoCommentsJob) streamComments(cont *apijson.CommentContinuation) {
 		for _, comment := range page.Comments {
 			subCont := apijson.CommentRepliesContinuation(&comment, cont)
 			if subCont != nil {
-				j.wg.Add(1)
-				go j.streamComments(subCont)
+				streamComments(comments, subCont)
 			}
-			j.comments <- comment
+			comments <- comment
 		}
 
 		if !page.MoreComments {
@@ -130,59 +167,25 @@ func (j *videoCommentsJob) streamComments(cont *apijson.CommentContinuation) {
 		logrus.Warn("Continuation limit reached")
 	} else if err != nil {
 		logrus.WithError(err).Error("Comment stream aborted")
-	} else {
-		logrus.Info("Finished comment stream")
 	}
 }
 
-func (j *videoCommentsJob) streamNewComments(cont *apijson.CommentContinuation) {
-	defer j.wg.Done()
+func streamNewComments(comments chan<- data.Comment, cont *apijson.CommentContinuation) {
 	var err error
 	var page apijson.CommentPage
-	page, err = j.nextCommentPage(cont, -1)
+	page, err = nextCommentPage(cont, -1)
 	if err != nil {
 		logrus.WithError(err).Error("Comment stream aborted")
 		return
 	}
-	*cont = *page.NewComments
-
-	j.streamComments(cont)
-}
-
-func (j *videoCommentsJob) streamLiveComments(cont *apijson.CommentContinuation) {
-	// TODO Basic deduplication
-
-	defer j.wg.Done()
-	var err error
-	var page apijson.CommentPage
-	page, err = j.nextCommentPage(cont, -1)
-	if err != nil {
-		logrus.WithError(err).Error("Comment stream aborted")
+	if page.NewComments == nil {
 		return
 	}
 	*cont = *page.NewComments
-
-	for i := 0; true; i++ {
-		page, err = j.nextCommentPage(cont, i)
-		if err != nil {
-			break
-		}
-		*cont = *page.NewComments
-		for _, comment := range page.Comments {
-			subCont := apijson.CommentRepliesContinuation(&comment, cont)
-			if subCont != nil {
-				j.wg.Add(1)
-				go j.streamComments(subCont)
-			}
-			j.comments <- comment
-		}
-	}
-	if err != nil {
-		logrus.WithError(err).Error("Comment stream aborted")
-	}
+	streamComments(comments, cont)
 }
 
-func (j *videoCommentsJob) nextCommentPage(cont *apijson.CommentContinuation, i int) (page apijson.CommentPage, err error) {
+func nextCommentPage(cont *apijson.CommentContinuation, i int) (page apijson.CommentPage, err error) {
 	req := apijson.GrabCommentPage(cont)
 	defer fasthttp.ReleaseRequest(req)
 	res := fasthttp.AcquireResponse()
@@ -201,9 +204,16 @@ func (j *videoCommentsJob) nextCommentPage(cont *apijson.CommentContinuation, i 
 	}
 
 	if cont.ParentID == "" {
-		logrus.Infof("Got page #%02d\n", i)
+		logrus.WithFields(logrus.Fields{
+			"video_id": cont.VideoID,
+			"index": i,
+		}).Infof("Page")
 	} else {
-		logrus.Infof("Got sub comment page (%s) #%02d\n", cont.ParentID, i)
+		logrus.WithFields(logrus.Fields{
+			"video_id": cont.VideoID,
+			"index": i,
+			"parent_id": cont.ParentID,
+		}).Infof("Sub page")
 	}
 	return page, nil
 }

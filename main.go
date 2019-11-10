@@ -5,14 +5,14 @@ package main
 
 import (
 	"fmt"
-	"github.com/terorie/yt-mango/cmd"
-	"github.com/terorie/yt-mango/version"
 	"os"
+
+	"github.com/terorie/yt-mango/cmd"
 )
 
 func main() {
 	if len(os.Args) == 2 && os.Args[1] == "--version" {
-		fmt.Println(version.Get())
+		fmt.Println(cmd.Version)
 		os.Exit(0)
 	}
 

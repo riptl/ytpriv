@@ -146,10 +146,6 @@ func (j *videoCommentsJob) streamComments(cont *apijson.CommentContinuation) {
 		j.log.Warn("Continuation limit reached")
 	} else if err != nil {
 		j.log.WithError(err).Error("Comment stream aborted")
-	} else if cont.ParentID == "" {
-		j.log.Info("Finished comment stream")
-	} else {
-		j.log.Infof("Finished sub comment stream (%s)", cont.ParentID)
 	}
 }
 
@@ -231,9 +227,16 @@ func (j *videoCommentsJob) nextCommentPage(cont *apijson.CommentContinuation, i 
 	}
 
 	if cont.ParentID == "" {
-		j.log.Infof("Got page #%02d", i)
+		j.log.WithFields(logrus.Fields{
+			"video_id": j.VideoID,
+			"index": i,
+		}).Info("Page")
 	} else {
-		j.log.Infof("Got sub comment page (%s) #%02d", cont.ParentID, i)
+		j.log.WithFields(logrus.Fields{
+			"video_id": j.VideoID,
+			"index": i,
+			"parent_id": cont.ParentID,
+		}).Info("Sub page")
 	}
 	atomic.AddInt64(&j.Pages, 1)
 	atomic.AddInt64(&j.Items, int64(len(page.Comments)))

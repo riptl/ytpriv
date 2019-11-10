@@ -18,6 +18,7 @@ import (
 var matchThumbUrl = regexp.MustCompile("^.+/hqdefault\\.jpg")
 
 var unexpectedType = errors.New("unexpected type")
+var ErrRateLimit = errors.New("reCAPTCHA triggered")
 
 func ParseVideo(v *data.Video, res *fasthttp.Response) error {
 	internal := new(videoData)
@@ -25,6 +26,13 @@ func ParseVideo(v *data.Video, res *fasthttp.Response) error {
 
 	if res.StatusCode() != fasthttp.StatusOK {
 		return fmt.Errorf("response status %d", res.StatusCode())
+	}
+	contentType := res.Header.ContentType()
+	switch {
+	case bytes.HasPrefix(contentType, []byte("application/json")):
+		break
+	case bytes.HasPrefix(contentType, []byte("text/html")):
+		return ErrRateLimit
 	}
 
 	// Parse JSON
@@ -91,7 +99,7 @@ func ParseVideo(v *data.Video, res *fasthttp.Response) error {
 	ysc, ok = parseSetCookie(res, "YSC")
 	if !ok { goto cookieFailed }
 	cookie = visitorInfo + "; " + ysc
-	parseCommentToken(internal, watchNextContents, cookie, xsrfToken)
+	parseCommentToken(internal, watchNextContents, v.ID, cookie, xsrfToken)
 
 cookieFailed:
 
@@ -104,6 +112,17 @@ cookieFailed:
 	if playerArgs != nil {
 		if err := parsePlayerArgs(v, playerArgs);
 			err != nil { return err }
+	}
+
+	// Get captions
+	captionTracks := playerResponse.GetArray("captions", "playerCaptionsTracklistRenderer", "captionTracks")
+	for _, track := range captionTracks {
+		v.Captions = append(v.Captions, data.Caption{
+			VssID:        string(track.GetStringBytes("vssId")),
+			Name:         string(track.GetStringBytes("name", "simpleText")),
+			Code:         string(track.GetStringBytes("languageCode")),
+			Translatable: track.GetBool("isTranslatable"),
+		})
 	}
 
 	return nil
@@ -244,7 +263,7 @@ func parseVideoRelated(watchNextResults *fastjson.Value) []data.RelatedVideo {
 	return related
 }
 
-func parseCommentToken(data *videoData, contentList []*fastjson.Value, cookie string, xsrfToken string) {
+func parseCommentToken(data *videoData, contentList []*fastjson.Value, videoID string, cookie string, xsrfToken string) {
 	for _, content := range contentList {
 		sectionIdentifier := string(content.GetStringBytes("itemSectionRenderer", "sectionIdentifier"))
 		if sectionIdentifier != "comment-item-section" {
@@ -255,6 +274,7 @@ func parseCommentToken(data *videoData, contentList []*fastjson.Value, cookie st
 			continue
 		}
 		data.continuation = &CommentContinuation{
+			VideoID: videoID,
 			Cookie: cookie,
 			Token:  continuation,
 			XSRF:   xsrfToken,

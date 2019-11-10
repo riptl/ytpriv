@@ -15,7 +15,7 @@ type Video struct {
 	License        string      `json:"license,omitempty"`
 	Genre          string      `json:"genre"`
 	Tags           []string    `json:"tags,omitempty"`
-	Subtitles      []string    `json:"subtitles,omitempty"`
+	Captions       []Caption   `json:"captions,omitempty"`
 	FamilyFriendly bool        `json:"family_friendly"`
 	Livestream     *Livestream `json:"livestream,omitempty"`
 
@@ -49,9 +49,11 @@ type Livestream struct {
 	LiveContent  bool `json:"is_live_content"`
 }
 
-type Subtitle struct {
-	URL       string
-	Extension string
+type Caption struct {
+	VssID        string `json:"vss_id"`
+	Name         string `json:"name"`
+	Code         string `json:"code"`
+	Translatable bool   `json:"translatable"`
 }
 
 type VisibilitySetting uint8

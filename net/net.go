@@ -1,8 +1,6 @@
 package net
 
-import (
-	"github.com/valyala/fasthttp"
-)
+import "github.com/valyala/fasthttp"
 
 var MaxWorkers uint
 

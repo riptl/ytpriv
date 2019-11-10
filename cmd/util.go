@@ -1,9 +1,11 @@
 package cmd
 
 import (
+	"bufio"
 	"fmt"
-	"github.com/spf13/cobra"
 	"os"
+
+	"github.com/spf13/cobra"
 )
 
 func cmdFunc(f func(*cobra.Command, []string)error) func(*cobra.Command, []string) {
@@ -12,6 +14,20 @@ func cmdFunc(f func(*cobra.Command, []string)error) func(*cobra.Command, []strin
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
+		}
+	}
+}
+
+func stdinOrArgs(out chan<- string, args []string) {
+	defer close(out)
+	if len(args) == 0 {
+		scn := bufio.NewScanner(os.Stdin)
+		for scn.Scan() {
+			out <- scn.Text()
+		}
+	} else {
+		for _, item := range args {
+			out <- item
 		}
 	}
 }

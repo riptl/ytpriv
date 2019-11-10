@@ -26,37 +26,21 @@ var channelDumpCmd = cobra.Command{
 func doChannelDump(_ *cobra.Command, args []string) error {
 	start := time.Now()
 
-	// Create channel IDs channel
+	// Create argument channels
+	jobs := make(chan string)
+	go stdinOrArgs(jobs, args)
 	channelIDs := make(chan string)
-	if len(args) == 0 {
-		// Read channel IDs from stdin
-		go func() {
-			defer close(channelIDs)
-			scn := bufio.NewScanner(os.Stdin)
-			for scn.Scan() {
-				line := scn.Text()
-				channelID, err := api.GetChannelID(line)
-				if err != nil {
-					log.Error(err)
-					continue
-				}
-				channelIDs <- channelID
+	go func() {
+		defer close(channelIDs)
+		for job := range jobs {
+			channelID, err := api.GetChannelID(job)
+			if err != nil {
+				log.Error(err)
+				continue
 			}
-		}()
-	} else {
-		// Copy channel IDs from arguments
-		go func() {
-			defer close(channelIDs)
-			for _, _url := range args {
-				channelID, err := api.GetChannelID(_url)
-				if err != nil {
-					log.Error(err)
-					continue
-				}
-				channelIDs <- channelID
-			}
-		}()
-	}
+			channelIDs <- channelID
+		}
+	}()
 
 	// Create videoIDs from channel IDs
 	wr := bufio.NewWriter(os.Stdout)
