@@ -3,9 +3,9 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/spf13/cobra"
 	"github.com/terorie/yt-mango/api"
-	"github.com/terorie/yt-mango/apis"
 	"github.com/terorie/yt-mango/data"
 	"github.com/terorie/yt-mango/net"
 	"github.com/valyala/fasthttp"
@@ -24,7 +24,7 @@ func doVideoDetail(_ *cobra.Command, args []string) error {
 	videoID, err := api.GetVideoID(videoID)
 	if err != nil { return err }
 
-	videoReq := apis.Main.GrabVideo(videoID)
+	videoReq := api.GrabVideo(videoID)
 
 	res := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(res)
@@ -34,7 +34,7 @@ func doVideoDetail(_ *cobra.Command, args []string) error {
 
 	var v data.Video
 	v.ID = videoID
-	err = apis.Main.ParseVideo(&v, res)
+	err = api.ParseVideo(&v, res)
 	if err != nil { return err }
 
 	bytesMain, err := json.MarshalIndent(&v, "", "\t")

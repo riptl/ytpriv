@@ -1,4 +1,4 @@
-package apijson
+package api
 
 import (
 	"errors"

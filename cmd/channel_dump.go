@@ -2,15 +2,15 @@ package cmd
 
 import (
 	"bufio"
-	log "github.com/sirupsen/logrus"
-	"github.com/spf13/cobra"
-	"github.com/terorie/yt-mango/api"
-	"github.com/terorie/yt-mango/apis"
-	"github.com/terorie/yt-mango/net"
-	"github.com/valyala/fasthttp"
 	"os"
 	"sync"
 	"time"
+
+	log "github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
+	"github.com/terorie/yt-mango/api"
+	"github.com/terorie/yt-mango/net"
+	"github.com/valyala/fasthttp"
 )
 
 // The channel dump route lists
@@ -85,7 +85,7 @@ func dumpChannel(channelID string, videoIDs chan<- string) error {
 
 	for {
 		// Request next page
-		req := apis.Main.GrabChannelPage(channelID, page)
+		req := api.GrabChannelPage(channelID, page)
 		res := fasthttp.AcquireResponse()
 
 		err := net.Client.Do(req, res)
@@ -96,7 +96,7 @@ func dumpChannel(channelID string, videoIDs chan<- string) error {
 		}
 
 		// Parse response
-		videoURLs, err := apis.Main.ParseChannelVideoURLs(res)
+		videoURLs, err := api.ParseChannelVideoURLs(res)
 		fasthttp.ReleaseResponse(res)
 		if err != nil { return err }
 

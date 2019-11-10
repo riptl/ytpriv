@@ -39,10 +39,7 @@ with `go get github.com/terorie/yt-mango` for a newer build!
 ##### Project structure
 
 - _/data_: Data definitions
-- _/api_: Shared functions and abstract API definitions
-- _/apis_: API implementations
-    - _/apiclassic_: HTML API implementation (parsing using [goquery][goquery])
-    - _/apijson_: JSON API implementation (parsing using [fastjson][fastjson])
+- _/api_: JSON API client (parsing using [fastjson][fastjson])
 - _/net_: HTTP utilities
 - _/cmd_: [Cobra][cobra] CLI
 

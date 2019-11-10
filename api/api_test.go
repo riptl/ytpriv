@@ -1,31 +1,19 @@
-package apis
+package api
 
 import (
-	"github.com/stretchr/testify/assert"
-	"github.com/terorie/yt-mango/api"
-	"github.com/terorie/yt-mango/data"
-	"github.com/terorie/yt-mango/net"
-	"github.com/valyala/fasthttp"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/terorie/yt-mango/data"
+	"github.com/terorie/yt-mango/net"
+	"github.com/valyala/fasthttp"
 )
 
-func TestClassicVideo(t *testing.T) { testVideo(t, &ClassicAPI) }
-func TestClassicVideoDeleted(t *testing.T) { testVideoDeleted(t, &ClassicAPI) }
-func TestClassicVideoRestricted(t *testing.T) { testVideoRestricted(t, &ClassicAPI) }
-func TestClassicVideoDescription(t *testing.T) { testVideoDescription(t, &ClassicAPI) }
-func TestClassicVideoUnlisted(t *testing.T) { testVideoUnlisted(t, &ClassicAPI) }
-
-func TestJsonVideo(t *testing.T) { testVideo(t, &JsonAPI) }
-func TestJsonVideoDeleted(t *testing.T) { testVideoDeleted(t, &JsonAPI) }
-func TestJsonVideoRestricted(t *testing.T) { testVideoRestricted(t, &JsonAPI) }
-func TestJsonVideoDescription(t *testing.T) { testVideoDescription(t, &JsonAPI) }
-func TestJsonVideoUnlisted(t *testing.T) { testVideoUnlisted(t, &JsonAPI) }
-
 // Standard video test
-func testVideo(t *testing.T, a *api.API) {
-	req := a.GrabVideo("uOXLKPCs54c")
+func TestVideo(t *testing.T) {
+	req := GrabVideo("uOXLKPCs54c")
 
 	res := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(res)
@@ -35,19 +23,18 @@ func testVideo(t *testing.T, a *api.API) {
 
 	var v data.Video
 	v.ID = "uOXLKPCs54c"
-	err = a.ParseVideo(&v, res)
+	err = ParseVideo(&v, res)
 	if err != nil { assert.FailNow(t, err.Error()) }
-	assert.NotZero(t, len(v.Related), "No recommendations")
+	assert.NotZero(t, len(v.RelatedVideos), "No related videos")
 
-	assert.Equal(t, "https://www.youtube.com/watch?v=uOXLKPCs54c", v.URL)
-	assert.Equal(t, 2013, v.UploadDate.Year())
-	assert.Equal(t, time.October, v.UploadDate.Month())
-	assert.Equal(t, 8, v.UploadDate.Day())
+	uploadDate := time.Unix(v.Uploaded, 0)
+	assert.Equal(t, 2013, uploadDate.Year())
+	assert.Equal(t, time.October, uploadDate.Month())
+	assert.Equal(t, 8, uploadDate.Day())
 	if !(v.Duration == 10 || v.Duration == 11) {
 		assert.Failf(t, "wrong duration", "expected: 10/11, actual: %d", v.Duration)
 	}
 	assert.Equal(t, "UCsLiV4WJfkTEHH0b9PmRklw", v.UploaderID)
-	assert.Equal(t, "https://www.youtube.com/channel/UCsLiV4WJfkTEHH0b9PmRklw", v.UploaderURL)
 	assert.Equal(t, "Webdriver Torso", v.Uploader)
 	assert.Equal(t, "tmpFmHnGe", v.Title)
 	// TODO Thumbnail
@@ -71,7 +58,7 @@ func testVideo(t *testing.T, a *api.API) {
 }
 
 // Deleted video test
-func testVideoDeleted(t *testing.T, a *api.API) {
+func testVideoDeleted(t *testing.T, a *API) {
 	req := a.GrabVideo("chGl0_nFyqg")
 
 	res := fasthttp.AcquireResponse()
@@ -86,13 +73,13 @@ func testVideoDeleted(t *testing.T, a *api.API) {
 	err = a.ParseVideo(&v, res)
 	if err == nil {
 		assert.FailNow(t, "no error on unavailable video")
-	} else if err != api.VideoUnavailable {
+	} else if err != VideoUnavailable {
 		assert.FailNow(t, err.Error(), "wrong error thrown")
 	}
 }
 
 // Age-restricted video test
-func testVideoRestricted(t *testing.T, a *api.API) {
+func testVideoRestricted(t *testing.T, a *API) {
 	req := a.GrabVideo("6kLq3WMV1nU")
 
 	res := fasthttp.AcquireResponse()
@@ -109,9 +96,10 @@ func testVideoRestricted(t *testing.T, a *api.API) {
 	assert.Equal(t, "Dedication To My Ex (Miss That) (Lyric Video)", v.Title)
 	assert.Equal(t, "LloydVEVO", v.Uploader)
 	assert.Equal(t, "UCYvy_rZWF3udXeDHy3PBdtw", v.UploaderID)
-	assert.Equal(t, 2011, v.UploadDate.Year())
-	assert.Equal(t, time.June, v.UploadDate.Month())
-	assert.Equal(t, 29, v.UploadDate.Day())
+	uploadDate := time.Unix(v.Uploaded, 0)
+	assert.Equal(t, 2011, uploadDate.Year())
+	assert.Equal(t, time.June, uploadDate.Month())
+	assert.Equal(t, 29, uploadDate.Day())
 	assert.False(t, v.FamilyFriendly, "family friendly")
 
 	// Parse tags
@@ -137,7 +125,7 @@ func testVideoRestricted(t *testing.T, a *api.API) {
 }
 
 // Description test
-func testVideoDescription(t *testing.T, a *api.API) {
+func testVideoDescription(t *testing.T, a *API) {
 	req := a.GrabVideo("kj9mFK62c6E")
 
 	res := fasthttp.AcquireResponse()
@@ -176,7 +164,7 @@ some attacks: `
 }
 
 // Unlisted video test
-func testVideoUnlisted(t *testing.T, a *api.API) {
+func testVideoUnlisted(t *testing.T, a *API) {
 	req := a.GrabVideo("RD5otQyBFqc")
 
 	res := fasthttp.AcquireResponse()
@@ -192,9 +180,10 @@ func testVideoUnlisted(t *testing.T, a *api.API) {
 	assert.Equal(t, "How Northern Lights Are Created", v.Title)
 	assert.Equal(t, "Love Nature", v.Uploader)
 	assert.Equal(t, "UCRZPkuHwaoKwTP3CYPdVldg", v.UploaderID)
-	assert.Equal(t, 2013, v.UploadDate.Year())
-	assert.Equal(t, time.February, v.UploadDate.Month())
-	assert.Equal(t, 11, v.UploadDate.Day())
+	uploadDate := time.Unix(v.Uploaded, 0)
+	assert.Equal(t, 2013, uploadDate.Year())
+	assert.Equal(t, time.February, uploadDate.Month())
+	assert.Equal(t, 11, uploadDate.Day())
 	assert.Equal(t, "Science & Technology", v.Genre)
 	assert.False(t, v.NoComments, "no comments")
 	assert.False(t, v.NoRatings, "no ratings")

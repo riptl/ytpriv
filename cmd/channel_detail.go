@@ -1,14 +1,7 @@
 package cmd
 
 import (
-	"encoding/json"
-	"fmt"
 	"github.com/spf13/cobra"
-	"github.com/terorie/yt-mango/api"
-	"github.com/terorie/yt-mango/apis"
-	"github.com/terorie/yt-mango/data"
-	"github.com/terorie/yt-mango/net"
-	"github.com/valyala/fasthttp"
 )
 
 var channelDetailCmd = cobra.Command{
@@ -19,12 +12,13 @@ var channelDetailCmd = cobra.Command{
 }
 
 func doChannelDetail(_ *cobra.Command, args []string) error {
-	channelID := args[0]
+	panic("not implemented")
+	/*channelID := args[0]
 
 	channelID, err := api.GetChannelID(channelID)
 	if err != nil { return err }
 
-	channelReq := apis.Main.GrabChannel(channelID)
+	channelReq := api.GrabChannel(channelID)
 
 	res := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(res)
@@ -33,11 +27,11 @@ func doChannelDetail(_ *cobra.Command, args []string) error {
 	if err != nil { return err }
 
 	var c data.Channel
-	apis.Main.ParseChannel(&c, res)
+	api.ParseChannel(&c, res)
 
 	bytes, err := json.MarshalIndent(&c, "", "\t")
 	if err != nil { return err }
 	fmt.Println(string(bytes))
 
-	return nil
+	return nil*/
 }

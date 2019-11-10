@@ -10,8 +10,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/terorie/yt-mango/api"
-	"github.com/terorie/yt-mango/apijson"
-	"github.com/terorie/yt-mango/apis"
 	"github.com/terorie/yt-mango/data"
 	"github.com/terorie/yt-mango/net"
 	"github.com/valyala/fasthttp"
@@ -32,9 +30,6 @@ func init() {
 }
 
 func doVideoComments(c *cobra.Command, args []string) error {
-	if apis.Main != &apis.JsonAPI {
-		return fmt.Errorf("only JSON API supported")
-	}
 	start := time.Now()
 	defer func() {
 		logrus.Infof("Finished after %s", time.Since(start).String())
@@ -104,7 +99,7 @@ func streamVideoComments(comments chan<- data.Comment, videoID string) error {
 	vid, err := simpleGetVideo(videoID)
 	if err != nil { return err }
 
-	cont := apijson.InitialCommentContinuation(vid)
+	cont := api.InitialCommentContinuation(vid)
 	if cont == nil {
 		return fmt.Errorf("failed to request comments")
 	}
@@ -115,7 +110,7 @@ func streamVideoComments(comments chan<- data.Comment, videoID string) error {
 }
 
 func simpleGetVideo(videoID string) (v *data.Video, err error) {
-	videoReq := apis.Main.GrabVideo(videoID)
+	videoReq := api.GrabVideo(videoID)
 
 	res := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(res)
@@ -127,8 +122,8 @@ func simpleGetVideo(videoID string) (v *data.Video, err error) {
 	v.ID = videoID
 	maxRetries := 2
 	for i := 0; i < maxRetries; i++ {
-		err = apis.Main.ParseVideo(v, res)
-		if err == apijson.ErrRateLimit {
+		err = api.ParseVideo(v, res)
+		if err == api.ErrRateLimit {
 			logrus.WithField("video_id", videoID).Warnf("Rate-Limited (%d/%d)", i+1, maxRetries)
 			time.Sleep(time.Second)
 			continue
@@ -139,20 +134,20 @@ func simpleGetVideo(videoID string) (v *data.Video, err error) {
 			return nil, err
 		}
 	}
-	return nil, apijson.ErrRateLimit
+	return nil, api.ErrRateLimit
 }
 
-func streamComments(comments chan<- data.Comment, cont *apijson.CommentContinuation) {
+func streamComments(comments chan<- data.Comment, cont *api.CommentContinuation) {
 	var err error
 	for i := 0; true; i++ {
-		var page apijson.CommentPage
+		var page api.CommentPage
 		page, err = nextCommentPage(cont, i)
 		if err != nil {
 			break
 		}
 
 		for _, comment := range page.Comments {
-			subCont := apijson.CommentRepliesContinuation(&comment, cont)
+			subCont := api.CommentRepliesContinuation(&comment, cont)
 			if subCont != nil {
 				streamComments(comments, subCont)
 			}
@@ -170,9 +165,9 @@ func streamComments(comments chan<- data.Comment, cont *apijson.CommentContinuat
 	}
 }
 
-func streamNewComments(comments chan<- data.Comment, cont *apijson.CommentContinuation) {
+func streamNewComments(comments chan<- data.Comment, cont *api.CommentContinuation) {
 	var err error
-	var page apijson.CommentPage
+	var page api.CommentPage
 	page, err = nextCommentPage(cont, -1)
 	if err != nil {
 		logrus.WithError(err).Error("Comment stream aborted")
@@ -185,8 +180,8 @@ func streamNewComments(comments chan<- data.Comment, cont *apijson.CommentContin
 	streamComments(comments, cont)
 }
 
-func nextCommentPage(cont *apijson.CommentContinuation, i int) (page apijson.CommentPage, err error) {
-	req := apijson.GrabCommentPage(cont)
+func nextCommentPage(cont *api.CommentContinuation, i int) (page api.CommentPage, err error) {
+	req := api.GrabCommentPage(cont)
 	defer fasthttp.ReleaseRequest(req)
 	res := fasthttp.AcquireResponse()
 	err = net.Client.Do(req, res)
@@ -197,7 +192,7 @@ func nextCommentPage(cont *apijson.CommentContinuation, i int) (page apijson.Com
 		return page, continuationLimitReached
 	}
 
-	page, err = apijson.ParseCommentsPage(res, cont)
+	page, err = api.ParseCommentsPage(res, cont)
 	if err != nil { return page, err }
 	for _, cErr := range page.CommentParseErrs {
 		logrus.WithError(cErr).Error("Failed to parse comment")

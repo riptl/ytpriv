@@ -9,7 +9,6 @@ import (
 	"github.com/cenkalti/backoff"
 	"github.com/sirupsen/logrus"
 	"github.com/terorie/yt-mango/api"
-	"github.com/terorie/yt-mango/apijson"
 	"github.com/terorie/yt-mango/data"
 	"github.com/terorie/yt-mango/net"
 	"github.com/valyala/fasthttp"
@@ -41,7 +40,7 @@ func streamComments(out chan<- []byte, job *Job) error {
 	vid, err := simpleGetVideo(videoID)
 	if err != nil { return err }
 
-	cont := apijson.InitialCommentContinuation(vid)
+	cont := api.InitialCommentContinuation(vid)
 	if cont == nil {
 		return fmt.Errorf("failed to request comments")
 	}
@@ -90,7 +89,7 @@ type videoCommentsJob struct {
 }
 
 func simpleGetVideo(videoID string) (v *data.Video, err error) {
-	videoReq := apijson.GrabVideo(videoID)
+	videoReq := api.GrabVideo(videoID)
 
 	res := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(res)
@@ -111,23 +110,23 @@ func simpleGetVideo(videoID string) (v *data.Video, err error) {
 
 	v = new(data.Video)
 	v.ID = videoID
-	err = apijson.ParseVideo(v, res)
+	err = api.ParseVideo(v, res)
 	if err != nil { return nil, err }
 
 	return
 }
 
-func (j *videoCommentsJob) streamComments(cont *apijson.CommentContinuation) {
+func (j *videoCommentsJob) streamComments(cont *api.CommentContinuation) {
 	var err error
 	for i := 0; true; i++ {
-		var page apijson.CommentPage
+		var page api.CommentPage
 		page, err = j.nextCommentPage(cont, i)
 		if err != nil {
 			break
 		}
 
 		for _, comment := range page.Comments {
-			subCont := apijson.CommentRepliesContinuation(&comment, cont)
+			subCont := api.CommentRepliesContinuation(&comment, cont)
 			if subCont != nil {
 				j.wg.Add(1)
 				go func() {
@@ -149,9 +148,9 @@ func (j *videoCommentsJob) streamComments(cont *apijson.CommentContinuation) {
 	}
 }
 
-func (j *videoCommentsJob) streamNewComments(cont *apijson.CommentContinuation) {
+func (j *videoCommentsJob) streamNewComments(cont *api.CommentContinuation) {
 	var err error
-	var page apijson.CommentPage
+	var page api.CommentPage
 	page, err = j.nextCommentPage(cont, -1)
 	if err != nil {
 		j.log.WithError(err).Error("Comment stream aborted")
@@ -162,11 +161,11 @@ func (j *videoCommentsJob) streamNewComments(cont *apijson.CommentContinuation) 
 	j.streamComments(cont)
 }
 
-func (j *videoCommentsJob) streamLiveComments(cont *apijson.CommentContinuation) {
+func (j *videoCommentsJob) streamLiveComments(cont *api.CommentContinuation) {
 	// TODO Basic deduplication
 
 	var err error
-	var page apijson.CommentPage
+	var page api.CommentPage
 	page, err = j.nextCommentPage(cont, -1)
 	if err != nil {
 		j.log.WithError(err).Error("Comment stream aborted")
@@ -181,7 +180,7 @@ func (j *videoCommentsJob) streamLiveComments(cont *apijson.CommentContinuation)
 		}
 		*cont = *page.NewComments
 		for _, comment := range page.Comments {
-			subCont := apijson.CommentRepliesContinuation(&comment, cont)
+			subCont := api.CommentRepliesContinuation(&comment, cont)
 			if subCont != nil {
 				j.wg.Add(1)
 				go func() {
@@ -197,8 +196,8 @@ func (j *videoCommentsJob) streamLiveComments(cont *apijson.CommentContinuation)
 	}
 }
 
-func (j *videoCommentsJob) nextCommentPage(cont *apijson.CommentContinuation, i int) (page apijson.CommentPage, err error) {
-	req := apijson.GrabCommentPage(cont)
+func (j *videoCommentsJob) nextCommentPage(cont *api.CommentContinuation, i int) (page api.CommentPage, err error) {
+	req := api.GrabCommentPage(cont)
 	defer fasthttp.ReleaseRequest(req)
 	res := fasthttp.AcquireResponse()
 	err = backoff.Retry(func() error {
@@ -220,7 +219,7 @@ func (j *videoCommentsJob) nextCommentPage(cont *apijson.CommentContinuation, i 
 		return page, continuationLimitReached
 	}
 
-	page, err = apijson.ParseCommentsPage(res, cont)
+	page, err = api.ParseCommentsPage(res, cont)
 	if err != nil { return page, err }
 	for _, cErr := range page.CommentParseErrs {
 		j.log.WithError(cErr).Error("Failed to parse comment")

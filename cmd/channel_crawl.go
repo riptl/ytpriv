@@ -3,17 +3,17 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"sync"
+	"sync/atomic"
+	"time"
+
 	"github.com/allegro/bigcache"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/terorie/yt-mango/api"
-	"github.com/terorie/yt-mango/apis"
 	"github.com/terorie/yt-mango/data"
 	"github.com/terorie/yt-mango/net"
 	"github.com/valyala/fasthttp"
-	"sync"
-	"sync/atomic"
-	"time"
 )
 
 var channelCrawlCmd = cobra.Command{
@@ -136,7 +136,7 @@ func (d *channelDump) videoDumpWorker() {
 
 func (d *channelDump) videoDumpSingle(videoId string) {
 	// Download video info
-	req := apis.Main.GrabVideo(videoId)
+	req := api.GrabVideo(videoId)
 
 	res := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(res)
@@ -154,7 +154,7 @@ func (d *channelDump) videoDumpSingle(videoId string) {
 	v.ID = videoId
 
 	// Parse video
-	err = apis.Main.ParseVideo(&v, res)
+	err = api.ParseVideo(&v, res)
 	if err != nil {
 		logrus.WithError(err).
 			WithField("id", videoId).

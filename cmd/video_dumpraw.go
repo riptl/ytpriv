@@ -13,8 +13,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/terorie/yt-mango/apijson"
-	"github.com/terorie/yt-mango/apis"
+	"github.com/terorie/yt-mango/api"
 	"github.com/terorie/yt-mango/net"
 	"github.com/valyala/fasthttp"
 )
@@ -127,7 +126,7 @@ func (d *videoDumpRaw) videoDumpRawWorker(videos chan<- rawVideo, videoIDs <-cha
 
 func (d *videoDumpRaw) videoDumpSingle(videoID string) ([]byte, error) {
 	// Download video info
-	req := apis.Main.GrabVideo(videoID)
+	req := api.GrabVideo(videoID)
 	defer fasthttp.ReleaseRequest(req)
 	res := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(res)
@@ -149,7 +148,7 @@ func (d *videoDumpRaw) videoDumpSingle(videoID string) ([]byte, error) {
 	case bytes.HasPrefix(contentType, []byte("application/json")):
 		break
 	case bytes.HasPrefix(contentType, []byte("text/html")):
-		return nil, apijson.ErrRateLimit
+		return nil, api.ErrRateLimit
 	}
 
 	// Download response

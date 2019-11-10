@@ -12,7 +12,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/terorie/yt-mango/api"
-	"github.com/terorie/yt-mango/apis"
 	"github.com/terorie/yt-mango/data"
 	"github.com/terorie/yt-mango/net"
 	"github.com/valyala/fasthttp"
@@ -175,7 +174,7 @@ func (d *videoDump) videoDumpWorker(videos chan<- data.Video, videoIDs <-chan st
 
 func (d *videoDump) videoDumpSingle(videoId string) (v data.Video, ok bool) {
 	// Download video info
-	req := apis.Main.GrabVideo(videoId)
+	req := api.GrabVideo(videoId)
 
 	res := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(res)
@@ -191,7 +190,7 @@ func (d *videoDump) videoDumpSingle(videoId string) (v data.Video, ok bool) {
 	v.ID = videoId
 
 	// Parse video
-	err = apis.Main.ParseVideo(&v, res)
+	err = api.ParseVideo(&v, res)
 	if err != nil {
 		logrus.WithError(err).
 			WithField("id", videoId).

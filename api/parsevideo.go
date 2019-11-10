@@ -1,4 +1,4 @@
-package apijson
+package api
 
 import (
 	"bytes"
@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/terorie/yt-mango/api"
 	"github.com/terorie/yt-mango/data"
 	"github.com/valyala/fasthttp"
 	"github.com/valyala/fastjson"
@@ -68,7 +67,7 @@ func ParseVideo(v *data.Video, res *fasthttp.Response) error {
 	playabilityStatus := string(playability.GetStringBytes("status"))
 	switch playabilityStatus {
 	case "ERROR":
-		return api.VideoUnavailable
+		return VideoUnavailable
 	case "LOGIN_REQUIRED":
 		v.FamilyFriendly = false
 	default:
@@ -201,8 +200,8 @@ func parseVideoInfo(v *data.Video, videoInfo []*fastjson.Value) error {
 	if len(likeRatioParts) == 2 {
 		likesStr := likeRatioParts[0]
 		dislikesStr := likeRatioParts[1]
-		v.Likes, _ = api.ExtractNumber(likesStr)
-		v.Dislikes, _ = api.ExtractNumber(dislikesStr)
+		v.Likes, _ = ExtractNumber(likesStr)
+		v.Dislikes, _ = ExtractNumber(dislikesStr)
 	}
 
 	// Get upload date
@@ -234,7 +233,7 @@ func parseVideoInfo(v *data.Video, videoInfo []*fastjson.Value) error {
 
 func parsePlayerArgs(v *data.Video, args *fastjson.Value) error {
 	fmts := string(args.GetStringBytes("fmt_list"))
-	fmtList, err := api.ParseFormatList(fmts)
+	fmtList, err := ParseFormatList(fmts)
 	if err != nil { return err }
 	v.Formats = fmtList
 	return nil
