@@ -20,9 +20,6 @@ var unexpectedType = errors.New("unexpected type")
 var ErrRateLimit = errors.New("reCAPTCHA triggered")
 
 func ParseVideo(v *data.Video, res *fasthttp.Response) error {
-	internal := new(videoData)
-	v.Internal = internal
-
 	if res.StatusCode() != fasthttp.StatusOK {
 		return fmt.Errorf("response status %d", res.StatusCode())
 	}
@@ -34,9 +31,20 @@ func ParseVideo(v *data.Video, res *fasthttp.Response) error {
 		return ErrRateLimit
 	}
 
+	return ParseVideoBody(v, res.Body(), res)
+}
+
+// res is optional
+func ParseVideoBody(v *data.Video, buf []byte, res *fasthttp.Response) error {
+	var internal *videoData
+	if res != nil {
+		internal = new(videoData)
+		v.Internal = internal
+	}
+
 	// Parse JSON
 	var p fastjson.Parser
-	root, err := p.ParseBytes(res.Body())
+	root, err := p.ParseBytes(buf)
 	if err != nil { return err }
 
 	rootArray := root.GetArray()
@@ -91,14 +99,16 @@ func ParseVideo(v *data.Video, res *fasthttp.Response) error {
 	if err := parseVideoInfo(v, watchNextContents);
 		err != nil { return err }
 
-	var visitorInfo, ysc, cookie string
-	var ok bool
-	visitorInfo, ok = parseSetCookie(res, "VISITOR_INFO1_LIVE")
-	if !ok { goto cookieFailed }
-	ysc, ok = parseSetCookie(res, "YSC")
-	if !ok { goto cookieFailed }
-	cookie = visitorInfo + "; " + ysc
-	parseCommentToken(internal, watchNextContents, v.ID, cookie, xsrfToken)
+	if res != nil {
+		var visitorInfo, ysc, cookie string
+		var ok bool
+		visitorInfo, ok = parseSetCookie(res, "VISITOR_INFO1_LIVE")
+		if !ok { goto cookieFailed }
+		ysc, ok = parseSetCookie(res, "YSC")
+		if !ok { goto cookieFailed }
+		cookie = visitorInfo + "; " + ysc
+		parseCommentToken(internal, watchNextContents, v.ID, cookie, xsrfToken)
+	}
 
 cookieFailed:
 
