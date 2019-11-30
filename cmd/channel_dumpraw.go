@@ -19,29 +19,29 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
-var videoDumpRawCmd = cobra.Command{
+var channelDumpRawCmd = cobra.Command{
 	Use:   "dumpraw",
-	Short: "Get a data set of videos in raw tar format",
-	Long:  "Reads video IDs from stdin and writes a tar archive with video JSONs to stdout",
+	Short: "Get a data set of channels in raw tar format",
+	Long:  "Reads channel IDs from stdin and writes a tar archive with channel JSONs to stdout",
 	Args:  cobra.NoArgs,
-	Run:   cmdFunc(doVideoRawDump),
+	Run:   cmdFunc(doChannelRawDump),
 }
 
-type videoDumpRaw struct {
+type channelDumpRaw struct {
 	routines sync.WaitGroup
 	count    expvar.Int
 }
 
-type rawVideo struct {
+type rawChannel struct {
 	ID  string
 	Buf []byte
 }
 
-func doVideoRawDump(c *cobra.Command, _ []string) (err error) {
+func doChannelRawDump(c *cobra.Command, _ []string) (err error) {
 	startTime := time.Now()
 
-	videoIDs := make(chan string)
-	videos := make(chan rawVideo)
+	channelIDs := make(chan string)
+	channels := make(chan rawChannel)
 
 	// Listen for Ctrl+C
 	var externalStop uint32
@@ -55,18 +55,18 @@ func doVideoRawDump(c *cobra.Command, _ []string) (err error) {
 
 	// Read input
 	go func() {
-		defer close(videoIDs)
+		defer close(channelIDs)
 		scn := bufio.NewScanner(os.Stdin)
 		for atomic.LoadUint32(&externalStop) == 0 && scn.Scan() {
-			videoIDs <- scn.Text()
+			channelIDs <- scn.Text()
 		}
 	}()
 
 	// Spawn workers
-	var d videoDumpRaw
+	var d channelDumpRaw
 	d.routines.Add(int(net.MaxWorkers))
 	for i := 0; i < int(net.MaxWorkers); i++ {
-		go d.videoDumpRawWorker(videos, videoIDs)
+		go d.channelDumpRawWorker(channels, channelIDs)
 	}
 
 	// Print stats
@@ -91,17 +91,17 @@ func doVideoRawDump(c *cobra.Command, _ []string) (err error) {
 			}
 			logrus.Info("Closed tar stream")
 		}()
-		for video := range videos {
+		for channel := range channels {
 			header := tar.Header{
-				Name:    video.ID + ".json",
-				Size:    int64(len(video.Buf)),
+				Name:    channel.ID + ".json",
+				Size:    int64(len(channel.Buf)),
 				Mode:    0644,
 				ModTime: time.Now(),
 			}
 			if err := out.WriteHeader(&header); err != nil {
 				logrus.Fatal(err)
 			}
-			if _, err := out.Write(video.Buf); err != nil {
+			if _, err := out.Write(channel.Buf); err != nil {
 				logrus.Fatal(err)
 			}
 		}
@@ -109,38 +109,38 @@ func doVideoRawDump(c *cobra.Command, _ []string) (err error) {
 
 	// Wait for routines to finish
 	d.routines.Wait()
-	close(videos)
+	close(channels)
 	printer.Wait()
 
 	// Print success message
-	logrus.Infof("Downloaded %d videos in %s",
+	logrus.Infof("Downloaded %d channels in %s",
 		d.count.Value(),
 		time.Since(startTime).String())
 
 	return nil
 }
 
-func (d *videoDumpRaw) videoDumpRawWorker(videos chan<- rawVideo, videoIDs <-chan string) {
+func (d *channelDumpRaw) channelDumpRawWorker(channels chan<- rawChannel, channelIDs <-chan string) {
 	defer d.routines.Done()
-	for videoID := range videoIDs {
-		buf, err := d.videoDumpSingle(videoID)
+	for channelID := range channelIDs {
+		buf, err := d.channelDumpSingle(channelID)
 		if err != nil {
 			logrus.WithError(err).
-				WithField("id", videoID).
-				Error("Failed to get video")
+				WithField("id", channelID).
+				Error("Failed to get channel")
 			continue
 		}
-		videos <- rawVideo{
-			ID:  videoID,
+		channels <- rawChannel{
+			ID:  channelID,
 			Buf: buf,
 		}
 		d.count.Add(1)
 	}
 }
 
-func (d *videoDumpRaw) videoDumpSingle(videoID string) ([]byte, error) {
-	// Download video info
-	req := api.GrabVideo(videoID)
+func (d *channelDumpRaw) channelDumpSingle(channelID string) ([]byte, error) {
+	// Download channel info
+	req := api.GrabChannel(channelID)
 	defer fasthttp.ReleaseRequest(req)
 	res := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(res)
@@ -148,8 +148,8 @@ func (d *videoDumpRaw) videoDumpSingle(videoID string) ([]byte, error) {
 	// Start request
 	if err := net.Client.Do(req, res); err != nil {
 		logrus.WithError(err).
-			WithField("id", videoID).
-			Error("Failed to download video")
+			WithField("id", channelID).
+			Error("Failed to download channel")
 		return nil, err
 	}
 

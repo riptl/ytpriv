@@ -44,39 +44,47 @@ func doChannelDump(_ *cobra.Command, args []string) error {
 
 	// Create videoIDs from channel IDs
 	wr := bufio.NewWriter(os.Stdout)
-	videoIDs := make(chan string)
-	go channelDumpScheduler(videoIDs, channelIDs)
-	for videoID := range videoIDs {
+	results := make(chan [2]string)
+	go channelDumpScheduler(results, channelIDs)
+	for result := range results {
 		// Avoid fmt newline flushes
-		_, _ = wr.WriteString(videoID)
+		_, _ = wr.WriteString(result[0])
+		_ = wr.WriteByte('\t')
+		_, _ = wr.WriteString(result[1])
 		_ = wr.WriteByte('\n')
 	}
+	_ = wr.Flush()
 
 	log.Infof("Finished after %s", time.Since(start).String())
 
 	return nil
 }
 
-func channelDumpScheduler(videoIDs chan<- string, channelIDs <-chan string) {
+func channelDumpScheduler(results chan<- [2]string, channelIDs <-chan string) {
 	var wg sync.WaitGroup
 	wg.Add(int(net.MaxWorkers))
 	for i := uint(0); i < net.MaxWorkers; i++ {
 		go func() {
+			var errors int
 			defer wg.Done()
 			for channelID := range channelIDs {
 				log.Infof("Dumping channel %s", channelID)
-				err := dumpChannel(channelID, videoIDs)
+				err := dumpChannel(results, channelID)
 				if err != nil {
+					errors++
 					log.WithError(err).Errorf("Failed to dump channel %s", channelID)
+				} else {
+					errors = 0
 				}
+				time.Sleep(time.Second * time.Duration(errors))
 			}
 		}()
 	}
 	wg.Wait()
-	close(videoIDs)
+	close(results)
 }
 
-func dumpChannel(channelID string, videoIDs chan<- string) error {
+func dumpChannel(results chan<- [2]string, channelID string) error {
 	channelID, err := api.GetChannelID(channelID)
 	if err != nil { return err }
 
@@ -115,7 +123,7 @@ func dumpChannel(channelID string, videoIDs chan<- string) error {
 			if err != nil {
 				log.WithError(err).Warn("Got invalid video URL")
 			}
-			videoIDs <- videoID
+			results <- [2]string{channelID, videoID}
 		}
 
 		totalURLs += len(videoURLs)

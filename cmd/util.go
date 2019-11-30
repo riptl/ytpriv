@@ -2,8 +2,10 @@ package cmd
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"os"
+	"os/signal"
 
 	"github.com/spf13/cobra"
 )
@@ -30,4 +32,19 @@ func stdinOrArgs(out chan<- string, args []string) {
 			out <- item
 		}
 	}
+}
+
+func signalContext(root context.Context) context.Context {
+	ctx, cancel := context.WithCancel(context.Background())
+	exitC := make(chan os.Signal)
+	signal.Notify(exitC, os.Interrupt)
+	go func() {
+		select {
+		case <-root.Done():
+			break
+		case <-exitC:
+			cancel()
+		}
+	}()
+	return ctx
 }

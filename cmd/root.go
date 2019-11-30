@@ -35,8 +35,11 @@ func init() {
 	pf.StringVar(&net.Client.Name, "user-agent", "yt-mango/0.1",
 		"HTTP client user-agent")
 
-	Root.AddCommand(&Channel)
-	Root.AddCommand(&Video)
+	Root.AddCommand(
+		&Channel,
+		&Video,
+		&Playlist,
+	)
 }
 
 func rootPreRun(_ *cobra.Command, _ []string) {

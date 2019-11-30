@@ -2,7 +2,6 @@ package api
 
 import (
 	"errors"
-	"github.com/sirupsen/logrus"
 	"strconv"
 	"strings"
 )
@@ -46,7 +45,7 @@ func ParseFormatList(fmtStr string) (fmtList []string, _ error) {
 		parts := strings.Split(fmt, "/")
 		// FIXME PROPERLY PARSE THIS
 		if len(parts) != 2 {
-			logrus.Warnf("Malformed format: %s", fmt)
+			//logrus.Warnf("Malformed format: %s", fmt)
 			continue
 		}
 		formatID := parts[0]

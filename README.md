@@ -1,49 +1,15 @@
-# yt-mango 💾
+# ytwrk 💾
 
-![build status](https://travis-ci.org/terorie/yt-mango.svg?branch=master)
+A fast and reliable tool for exporting YouTube data.
 
-##### Get it
+__Features__
+ - Exports comments
+ - Exports live chat
+ - Efficient parsing using `fastjson`
+ - Detailed access to channels and videos
+ - Scripting-friendly, favors stdio and works well with `mlr` and `jq`.
+ - Streaming-friendly, produces CSV/TSVs and NDJSON dumps.
 
-Grab an executable from the Releases tab
+If you need a large-scale data export, visit https://files.mine.terorie.dev/yt before starting a crawl.
 
-Or install and compile the Go project
-with `go get github.com/terorie/yt-mango` for a newer build!
-
-##### Usage
-
-- Getting JSON info about a video:
-  ```json
-  # ./yt-mango video detail https://www.youtube.com/watch?v=imooXqWLOfA
-  {
-      "id": "imooXqWLOfA",
-      "url": "https://www.youtube.com/watch?v=imooXqWLOfA",
-      "duration": 264,
-      "tags": [
-              "nimiq",
-              "blockchain",
-              "crypto",
-              "gource"
-      ],
-      …
-  }
-  ```
-- Download a collection of related videos:
-  ```
-  # ./yt-mango video dump 1000 dir imooXqWLOfA -c 64
-  …
-  INFO[0030] Downloaded 1000 videos in 30s!
-  # ls -1U dir | wc -l
-  1000
-  ```
-
-##### Project structure
-
-- _/data_: Data definitions
-- _/api_: JSON API client (parsing using [fastjson][fastjson])
-- _/net_: HTTP utilities
-- _/cmd_: [Cobra][cobra] CLI
-
- [goquery]: https://github.com/PuerkitoBio/goquery
- [fastjson]: https://github.com/valyala/fastjson
- [cobra]: https://github.com/spf13/cobra
- [viper]: https://github.com/spf13/viper
+Only use this tool to the extent permitted by the [YouTube ToS](https://www.youtube.com/static?template=terms).

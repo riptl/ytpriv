@@ -158,6 +158,7 @@ func parseVideoDetails(v *data.Video, videoDetails *fastjson.Value) error {
 		v.Tags = append(v.Tags, keyword)
 	}
 
+	v.ID = string(videoDetails.GetStringBytes("videoId"))
 	// Get title
 	v.Title = string(videoDetails.GetStringBytes("title"))
 	// Get description
@@ -215,13 +216,13 @@ func parseVideoInfo(v *data.Video, videoInfo []*fastjson.Value) error {
 	}
 
 	// Get upload date
-	dateText := string(secondary.GetStringBytes("dateText", "simpleText"))
+	dateText := string(primary.GetStringBytes("dateText", "simpleText"))
 	dateText = strings.TrimPrefix(dateText, "Published on ")
 	dateText = strings.TrimPrefix(dateText, "Uploaded on ") // Unlisted video
 	dateText = strings.TrimPrefix(dateText, "Started streaming on ")
 	dateText = strings.TrimPrefix(dateText, "Streamed live on ")
 
-	date, err := time.Parse("Jan _2, 2006", dateText)
+	date, err := time.Parse("01.02.2006", dateText)
 	if err == nil { v.Uploaded = date.Unix() }
 
 	// Get category

@@ -1,8 +1,6 @@
 package cmd
 
-import (
-	"github.com/spf13/cobra"
-)
+import "github.com/spf13/cobra"
 
 var force bool
 
@@ -13,7 +11,10 @@ var Channel = cobra.Command{
 
 func init() {
 	channelDumpCmd.Flags().BoolVarP(&force, "force", "f", false, "Overwrite the output file if it already exists")
-	Channel.AddCommand(&channelDumpCmd)
-	Channel.AddCommand(&channelDetailCmd)
-	Channel.AddCommand(&channelCrawlCmd)
+	Channel.AddCommand(
+		&channelCrawlCmd,
+		&channelDetailCmd,
+		&channelDumpRawCmd,
+		&channelDumpCmd,
+	)
 }

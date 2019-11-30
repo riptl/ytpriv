@@ -14,5 +14,6 @@ func init() {
 		&videoDumpCmd,
 		&videoDumpRawCmd,
 		&videoParseRawCmd,
+		&VideoLive,
 	)
 }

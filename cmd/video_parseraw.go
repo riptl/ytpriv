@@ -52,12 +52,13 @@ func doVideoParseRaw(_ *cobra.Command, _ []string) (err error) {
 		if err := api.ParseVideoBody(&v, fileBuf, nil); err != nil {
 			logrus.WithField("id", id).WithError(err).
 				Error("Failed to parse video")
+			continue
 		}
 
 		if err := enc.Encode(&v); err != nil {
 			logrus.Fatal(err)
 		}
 
-		logrus.WithField("id", id).Debug("Video")
+		logrus.Debugf("Got video %s", id)
 	}
 }
