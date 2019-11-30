@@ -9,7 +9,7 @@ import (
 	"github.com/terorie/yt-mango/net"
 )
 
-const Version = "v0.3 -- dev"
+const Version = "v0.4"
 
 var concurrentRequests uint
 var logLevel string
@@ -43,6 +43,20 @@ func init() {
 }
 
 func rootPreRun(_ *cobra.Command, _ []string) {
+	if concurrentRequests > 32 {
+		logrus.Warn("#################")
+		logrus.Warn("#### WARNING ####")
+		logrus.Warn("#################")
+		logrus.Warn("It looks like you are trying to crawl YouTube with a high request rate.")
+		logrus.Warn("This is highly discouraged and will likely result in automated permanent IP bans.")
+		logrus.Warn("Abusing any service with high request rates forces the operators to implement rate limits")
+		logrus.Warn("and fingerprinting bans, hurting tools like this and everyone else relying on those services.")
+		if _, err := os.Stat("/tmp/ytwrk_high_rate"); os.IsNotExist(err) {
+			logrus.Warn("If you know what you are doing, touch /tmp/ytwrk_high_rate")
+			logrus.Fatal("Terminating.")
+		}
+	}
+
 	net.MaxWorkers = concurrentRequests
 	net.Client.MaxConnsPerHost = int(concurrentRequests)
 
