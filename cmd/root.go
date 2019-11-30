@@ -6,7 +6,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/terorie/yt-mango/net"
+	"github.com/terorie/ytwrk/net"
 )
 
 const Version = "v0.4"
@@ -15,10 +15,9 @@ var concurrentRequests uint
 var logLevel string
 
 var Root = cobra.Command{
-	Use:   "yt-mango",
-	Short: "YT-Mango is a scalable video metadata archiver",
-	Long: "YT-Mango is a scalable video metadata archiving utility\n" +
-		"written by terorie",
+	Use:   "ytwrk",
+	Short: "ytwrk is a fast and light YouTube metadata exporter",
+	Long: "https://github.com/terorie/ytwrk",
 	PersistentPreRun: rootPreRun,
 }
 
@@ -32,7 +31,7 @@ func init() {
 	pf.StringVarP(&logLevel, "log-level", "l", "",
 		"Log level. Valid options are:\n" +
 		"{debug, info, warn, error, fatal, panic}")
-	pf.StringVar(&net.Client.Name, "user-agent", "yt-mango/0.1",
+	pf.StringVar(&net.Client.Name, "user-agent", "ytwrk/" + Version,
 		"HTTP client user-agent")
 
 	Root.AddCommand(

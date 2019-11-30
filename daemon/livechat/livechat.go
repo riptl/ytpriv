@@ -15,9 +15,9 @@ import (
 	jsonrpc "github.com/gorilla/rpc/json"
 
 	"github.com/sirupsen/logrus"
-	"github.com/terorie/yt-mango/api"
-	"github.com/terorie/yt-mango/data"
-	"github.com/terorie/yt-mango/net"
+	"github.com/terorie/ytwrk/api"
+	"github.com/terorie/ytwrk/data"
+	"github.com/terorie/ytwrk/net"
 	"github.com/valyala/fasthttp"
 )
 

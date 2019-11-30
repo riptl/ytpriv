@@ -1,6 +1,6 @@
-module github.com/terorie/yt-mango
+module github.com/terorie/ytwrk
 
-go 1.12
+go 1.13
 
 require (
 	github.com/allegro/bigcache v1.2.1

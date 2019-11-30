@@ -5,7 +5,7 @@ import "github.com/valyala/fasthttp"
 var MaxWorkers uint
 
 var Client = fasthttp.Client{
-	Name: "yt-mango/0.1",
+	Name: "ytwrk/v0.4",
 	DisableHeaderNamesNormalizing: true,
 	MaxConnsPerHost: 50,
 }

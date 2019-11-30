@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"github.com/terorie/yt-mango/api"
-	"github.com/terorie/yt-mango/data"
-	"github.com/terorie/yt-mango/net"
+	"github.com/terorie/ytwrk/api"
+	"github.com/terorie/ytwrk/data"
+	"github.com/terorie/ytwrk/net"
 	"github.com/valyala/fasthttp"
 )
 

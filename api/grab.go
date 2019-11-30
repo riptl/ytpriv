@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/terorie/yt-mango/net"
+	"github.com/terorie/ytwrk/net"
 	"github.com/valyala/fasthttp"
 )
 

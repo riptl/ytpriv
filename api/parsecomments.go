@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/terorie/yt-mango/data"
+	"github.com/terorie/ytwrk/data"
 	"github.com/valyala/fasthttp"
 	"github.com/valyala/fastjson"
 )

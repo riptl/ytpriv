@@ -1,5 +1,5 @@
-// yt-mango: YT video metadata archiving utility
-// Copyright (C) 2018  terorie
+// ytwrk: YT video metadata archiving utility
+// Copyright (C) 2019  terorie
 
 package main
 
@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/terorie/yt-mango/cmd"
+	"github.com/terorie/ytwrk/cmd"
 )
 
 func main() {

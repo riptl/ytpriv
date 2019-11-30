@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/terorie/yt-mango/data"
-	"github.com/terorie/yt-mango/net"
+	"github.com/terorie/ytwrk/data"
+	"github.com/terorie/ytwrk/net"
 	"github.com/valyala/fasthttp"
 )
 
