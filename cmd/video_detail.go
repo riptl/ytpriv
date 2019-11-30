@@ -12,7 +12,7 @@ import (
 )
 
 var videoDetailCmd = cobra.Command{
-	Use: "detail <video> [file]",
+	Use: "detail <video>",
 	Short: "Get details about a video",
 	Args: cobra.ExactArgs(1),
 	Run: cmdFunc(doVideoDetail),

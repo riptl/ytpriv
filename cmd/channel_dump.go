@@ -13,9 +13,8 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
-// The channel dump route lists
 var channelDumpCmd = cobra.Command{
-	Use:   "dumpurls [channel ID...]",
+	Use:   "dump [channel ID...]",
 	Short: "Get all public video URLs from channels",
 	Long: "Takes in channel IDs and produces a list of video IDs uploaded by them.\n" +
 		"If no channel IDs are given as arguments, they are read from stdin.",

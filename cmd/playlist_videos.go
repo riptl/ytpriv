@@ -11,7 +11,7 @@ import (
 )
 
 var playlistVideos = cobra.Command{
-	Use: "videos",
+	Use: "videos <playlist ID>",
 	Short: "Dump the video IDs in a playlist",
 	Args: cobra.ExactArgs(1),
 	Run: cmdFunc(playlistVideosCmd),

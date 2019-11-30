@@ -12,8 +12,6 @@ var Channel = cobra.Command{
 func init() {
 	channelDumpCmd.Flags().BoolVarP(&force, "force", "f", false, "Overwrite the output file if it already exists")
 	Channel.AddCommand(
-		&channelCrawlCmd,
-		&channelDetailCmd,
 		&channelDumpRawCmd,
 		&channelDumpCmd,
 	)
