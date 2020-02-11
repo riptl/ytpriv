@@ -9,6 +9,6 @@ require (
 	github.com/spf13/cobra v0.0.5
 	github.com/stretchr/testify v1.4.0
 	github.com/terorie/go-quotecsv v1.0.1
-	github.com/valyala/fasthttp v1.8.0
+	github.com/valyala/fasthttp v1.9.0
 	github.com/valyala/fastjson v1.4.5
 )
