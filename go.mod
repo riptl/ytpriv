@@ -10,5 +10,5 @@ require (
 	github.com/stretchr/testify v1.6.1
 	github.com/terorie/go-quotecsv v1.0.1
 	github.com/valyala/fasthttp v1.14.0
-	github.com/valyala/fastjson v1.5.1
+	github.com/valyala/fastjson v1.5.3
 )
