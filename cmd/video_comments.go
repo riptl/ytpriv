@@ -27,9 +27,25 @@ var videoCommentsCmd = cobra.Command{
 func init() {
 	f := videoCommentsCmd.Flags()
 	f.Duration("slow-start", time.Second, "Time to wait between opening connections")
+	f.String("sort", "new", "Comment sort order (new, top)")
 }
 
 func doVideoComments(c *cobra.Command, args []string) error {
+	flags := c.Flags()
+	sortOrder, err := flags.GetString("sort")
+	if err != nil {
+		panic(err)
+	}
+	var top bool
+	switch sortOrder {
+	case "new":
+		top = false
+	case "top":
+		top = true
+	default:
+		return fmt.Errorf("unknown sort order: %s", sortOrder)
+	}
+
 	start := time.Now()
 	defer func() {
 		logrus.Infof("Finished after %s", time.Since(start).String())
@@ -53,11 +69,11 @@ func doVideoComments(c *cobra.Command, args []string) error {
 
 	// Dump comments
 	comments := make(chan data.Comment)
-	startDelay, err := c.Flags().GetDuration("slow-start")
+	startDelay, err := flags.GetDuration("slow-start")
 	if err != nil {
 		panic(err)
 	}
-	go videoCommentDumpScheduler(comments, videoIDs, startDelay)
+	go videoCommentDumpScheduler(comments, videoIDs, startDelay, top)
 	enc := json.NewEncoder(os.Stdout)
 	commentCount := int64(0)
 	for comment := range comments {
@@ -71,7 +87,7 @@ func doVideoComments(c *cobra.Command, args []string) error {
 	return nil
 }
 
-func videoCommentDumpScheduler(comments chan<- data.Comment, videoIDs <-chan string, startDelay time.Duration) {
+func videoCommentDumpScheduler(comments chan<- data.Comment, videoIDs <-chan string, startDelay time.Duration, top bool) {
 	defer close(comments)
 	var wg sync.WaitGroup
 	wg.Add(int(net.MaxWorkers))
@@ -81,7 +97,7 @@ func videoCommentDumpScheduler(comments chan<- data.Comment, videoIDs <-chan str
 			for videoID := range videoIDs {
 				logrus.WithField("video_id", videoID).
 					Info("Start video")
-				err := streamVideoComments(comments, videoID)
+				err := streamVideoComments(comments, videoID, top)
 				if err != nil {
 					logrus.WithError(err).Errorf("Failed to dump comments of video %s", videoID)
 				}
@@ -92,7 +108,7 @@ func videoCommentDumpScheduler(comments chan<- data.Comment, videoIDs <-chan str
 	wg.Wait()
 }
 
-func streamVideoComments(comments chan<- data.Comment, videoID string) error {
+func streamVideoComments(comments chan<- data.Comment, videoID string, top bool) error {
 	videoID, err := api.GetVideoID(videoID)
 	if err != nil {
 		return err
@@ -108,7 +124,11 @@ func streamVideoComments(comments chan<- data.Comment, videoID string) error {
 		return fmt.Errorf("failed to request comments")
 	}
 
-	streamNewComments(comments, cont)
+	if top {
+		streamTopComments(comments, cont)
+	} else {
+		streamNewComments(comments, cont)
+	}
 
 	return nil
 }
@@ -143,19 +163,25 @@ func simpleGetVideo(videoID string) (v *data.Video, err error) {
 	return nil, api.ErrRateLimit
 }
 
-func streamComments(comments chan<- data.Comment, cont *api.CommentContinuation) {
+func streamComments(comments chan<- data.Comment, cont *api.CommentContinuation, i int) {
+	var j int
 	var err error
-	for i := 0; true; i++ {
+	for {
 		var page api.CommentPage
-		page, err = nextCommentPage(cont, i)
+		page, err = nextCommentPage(cont, i, j)
 		if err != nil {
 			break
+		}
+		if cont.ParentID != "" {
+			j++
+		} else {
+			i++
 		}
 
 		for _, comment := range page.Comments {
 			subCont := api.CommentRepliesContinuation(&comment, cont)
 			if subCont != nil {
-				streamComments(comments, subCont)
+				streamComments(comments, subCont, i)
 			}
 			comments <- comment
 		}
@@ -174,7 +200,7 @@ func streamComments(comments chan<- data.Comment, cont *api.CommentContinuation)
 func streamNewComments(comments chan<- data.Comment, cont *api.CommentContinuation) {
 	var err error
 	var page api.CommentPage
-	page, err = nextCommentPage(cont, -1)
+	page, err = nextCommentPage(cont, -1, 0)
 	if err != nil {
 		logrus.WithError(err).Error("Comment stream aborted")
 		return
@@ -183,10 +209,25 @@ func streamNewComments(comments chan<- data.Comment, cont *api.CommentContinuati
 		return
 	}
 	*cont = *page.NewComments
-	streamComments(comments, cont)
+	streamComments(comments, cont, 0)
 }
 
-func nextCommentPage(cont *api.CommentContinuation, i int) (page api.CommentPage, err error) {
+func streamTopComments(comments chan<- data.Comment, cont *api.CommentContinuation) {
+	var err error
+	var page api.CommentPage
+	page, err = nextCommentPage(cont, -1, 0)
+	if err != nil {
+		logrus.WithError(err).Error("Comment stream aborted")
+		return
+	}
+	if page.NewComments == nil {
+		return
+	}
+	*cont = *page.TopComments
+	streamComments(comments, cont, 0)
+}
+
+func nextCommentPage(cont *api.CommentContinuation, i int, j int) (page api.CommentPage, err error) {
 	req := api.GrabCommentPage(cont)
 	defer fasthttp.ReleaseRequest(req)
 	res := fasthttp.AcquireResponse()
@@ -217,6 +258,7 @@ func nextCommentPage(cont *api.CommentContinuation, i int) (page api.CommentPage
 		logrus.WithFields(logrus.Fields{
 			"video_id":  cont.VideoID,
 			"index":     i,
+			"sub_index": j,
 			"parent_id": cont.ParentID,
 		}).Infof("Sub page")
 	}

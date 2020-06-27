@@ -58,7 +58,12 @@ func ParseCommentsPage(res *fasthttp.Response, cont *CommentContinuation) (page 
 	page.Continuation = cont
 
 	// Parse continuation
-	continuationSection := root.Get("response", "continuationContents", "itemSectionContinuation")
+	var continuationSection *fastjson.Value
+	if cont.ParentID == "" {
+		continuationSection = root.Get("response", "continuationContents", "itemSectionContinuation")
+	} else {
+		continuationSection = root.Get("response", "continuationContents", "commentRepliesContinuation")
+	}
 	continuationBlob := string(continuationSection.GetStringBytes(
 		"continuations", "0", "nextContinuationData", "continuation"))
 	if continuationBlob != "" {
