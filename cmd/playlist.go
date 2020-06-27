@@ -3,7 +3,7 @@ package cmd
 import "github.com/spf13/cobra"
 
 var Playlist = cobra.Command{
-	Use: "playlist",
+	Use:   "playlist",
 	Short: "Get information about playlists",
 }
 

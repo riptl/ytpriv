@@ -25,7 +25,7 @@ func GetChannelID(chanURL string) (string, error) {
 		// Check if old /user/ URL
 		if strings.HasPrefix(_url.Path, "/user/") {
 			// TODO Implement extraction of channel ID
-			return "", fmt.Errorf("New /channel/ link is required!\n" +
+			return "", fmt.Errorf("New /channel/ link is required!\n"+
 				"The old /user/ links do not work: %s", chanURL)
 		}
 
@@ -50,7 +50,7 @@ func GetChannelID(chanURL string) (string, error) {
 }
 
 func GetVideoID(vidURL string) (string, error) {
-	extractors := []func(string)(string, error) {
+	extractors := []func(string) (string, error){
 		getVideoIdFromUrl,
 		getVideoIdFromShortUrl,
 		getVideoIdFromUrlVariant,
@@ -60,7 +60,9 @@ func GetVideoID(vidURL string) (string, error) {
 		vidID, err := f(vidURL)
 		// Explicit error:
 		// Extractor right but malformed input
-		if err != nil { return "", err }
+		if err != nil {
+			return "", err
+		}
 		// Success
 		if vidID != "" {
 			return vidID, nil
@@ -86,11 +88,15 @@ func getVideoIdFromUrl(vidURL string) (string, error) {
 
 	// Parse URL
 	_url, err := url.Parse(vidURL)
-	if err != nil { return "", err }
+	if err != nil {
+		return "", err
+	}
 
 	// Extract from query
 	vidID := _url.Query().Get("v")
-	if vidID == "" { return "", fmt.Errorf("invalid input: %s", vidURL) }
+	if vidID == "" {
+		return "", fmt.Errorf("invalid input: %s", vidURL)
+	}
 
 	return vidID, nil
 }
@@ -102,7 +108,9 @@ func getVideoIdFromShortUrl(vidURL string) (string, error) {
 	}
 
 	_url, err := url.Parse(vidURL)
-	if err != nil { return "", err }
+	if err != nil {
+		return "", err
+	}
 
 	return strings.TrimPrefix(_url.Path, "/"), nil
 }
@@ -114,18 +122,25 @@ func getVideoIdFromUrlVariant(vidURL string) (string, error) {
 
 	var pathPrefix string
 	switch {
-		case urlV: pathPrefix = "/v/"
-		case urlEmbed: pathPrefix = "/embed/"
-		default: return "", nil
+	case urlV:
+		pathPrefix = "/v/"
+	case urlEmbed:
+		pathPrefix = "/embed/"
+	default:
+		return "", nil
 	}
 
 	// Parse URL
 	_url, err := url.Parse(vidURL)
-	if err != nil { return "", err }
+	if err != nil {
+		return "", err
+	}
 
 	// Extract ID by splitting prefix
 	vidID := strings.TrimPrefix(_url.Path, pathPrefix)
-	if len(_url.Path) == len(vidID) { return "", fmt.Errorf("invalid input: %s", vidURL) }
+	if len(_url.Path) == len(vidID) {
+		return "", fmt.Errorf("invalid input: %s", vidURL)
+	}
 
 	// Split at first "/"
 	vidID = strings.SplitN(vidID, "/", 1)[0]

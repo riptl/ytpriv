@@ -85,7 +85,9 @@ func channelDumpScheduler(results chan<- [2]string, channelIDs <-chan string) {
 
 func dumpChannel(results chan<- [2]string, channelID string) error {
 	channelID, err := api.GetChannelID(channelID)
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 
 	page := uint(0)
 	totalURLs := 0
@@ -105,10 +107,14 @@ func dumpChannel(results chan<- [2]string, channelID string) error {
 		// Parse response
 		videoURLs, err := api.ParseChannelVideoURLs(res)
 		fasthttp.ReleaseResponse(res)
-		if err != nil { return err }
+		if err != nil {
+			return err
+		}
 
 		// Stop if page is empty
-		if len(videoURLs) == 0 { break }
+		if len(videoURLs) == 0 {
+			break
+		}
 
 		// Print results
 		log.WithFields(log.Fields{

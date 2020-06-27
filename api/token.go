@@ -14,14 +14,14 @@ func GenChannelPageToken(channelId string, page uint64) string {
 	var inner bytes.Buffer
 
 	// channelId
-	inner.WriteByte(0x12) // type
+	inner.WriteByte(0x12)                       // type
 	writeVarint(&inner, uint64(len(channelId))) // len
-	inner.WriteString(channelId) // data
+	inner.WriteString(channelId)                // data
 
 	// token
-	inner.WriteByte(0x1a) // type
+	inner.WriteByte(0x1a)                   // type
 	writeVarint(&inner, uint64(len(token))) // len
-	inner.WriteString(token) // data
+	inner.WriteString(token)                // data
 
 	innerBytes := inner.Bytes()
 

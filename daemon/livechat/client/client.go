@@ -16,7 +16,7 @@ import (
 var serverURL string
 
 var app = cobra.Command{
-	Use: "livechat-client",
+	Use:   "livechat-client",
 	Short: "Utility to control the livechat daemon",
 }
 
@@ -33,10 +33,10 @@ func main() {
 }
 
 var enqueue = cobra.Command{
-	Use: "enqueue",
+	Use:   "enqueue",
 	Short: "Reads video IDs from stdin line-by-line and commits them",
-	Args: cobra.NoArgs,
-	Run: runEnqueue,
+	Args:  cobra.NoArgs,
+	Run:   runEnqueue,
 }
 
 var status = cobra.Command{

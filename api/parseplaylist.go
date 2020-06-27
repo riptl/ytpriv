@@ -27,9 +27,13 @@ func ParsePlaylist(l *data.Playlist, res *fasthttp.Response) error {
 	// Parse JSON
 	var p fastjson.Parser
 	root, err := p.ParseBytes(res.Body())
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 	rootArray := root.GetArray()
-	if rootArray == nil { return unexpectedType }
+	if rootArray == nil {
+		return unexpectedType
+	}
 
 	// Get interesting objects
 	var response *fastjson.Value
@@ -60,9 +64,9 @@ func ParsePlaylist(l *data.Playlist, res *fasthttp.Response) error {
 		videoRenderer := wrapper.Get("playlistVideoRenderer")
 		channel := videoRenderer.Get("shortBylineText", "runs", "0")
 		video := data.PlaylistVideo{
-			ID: string(videoRenderer.GetStringBytes("videoId")),
-			Title: string(videoRenderer.GetStringBytes("title", "simpleText")),
-			ChannelID: string(channel.GetStringBytes("browseEndpoint", "browseId")),
+			ID:          string(videoRenderer.GetStringBytes("videoId")),
+			Title:       string(videoRenderer.GetStringBytes("title", "simpleText")),
+			ChannelID:   string(channel.GetStringBytes("browseEndpoint", "browseId")),
 			ChannelName: string(channel.GetStringBytes("text")),
 		}
 		l.Videos = append(l.Videos, video)

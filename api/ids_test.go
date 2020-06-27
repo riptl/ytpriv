@@ -7,7 +7,7 @@ import (
 
 func TestGetVideoID(t *testing.T) {
 	id := "JNhpwY5Zkzk"
-	correct := []string {
+	correct := []string{
 		"https://www.youtube.com/watch?v=JNhpwY5Zkzk",
 		"youtube.com/watch?v=JNhpwY5Zkzk",
 		"https://youtube.com/watch?v=JNhpwY5Zkzk",
@@ -18,7 +18,7 @@ func TestGetVideoID(t *testing.T) {
 		"https://youtube.com/embed/JNhpwY5Zkzk",
 		"JNhpwY5Zkzk",
 	}
-	malformed := []string {
+	malformed := []string{
 		"youtube.com/watch?v",
 		"",
 	}

@@ -67,7 +67,9 @@ func GrabVideoSubtitleList(videoID string) (tracks *XMLSubTrackList, err error) 
 	res := fasthttp.AcquireResponse()
 
 	err = net.Client.Do(req, res)
-	if err != nil { return }
+	if err != nil {
+		return
+	}
 
 	if res.StatusCode() != 200 {
 		return nil, fmt.Errorf("HTTP status %d", res.StatusCode())

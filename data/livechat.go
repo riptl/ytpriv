@@ -11,6 +11,6 @@ type LiveChatMessage struct {
 }
 
 type LiveChatContinuation struct {
-	Timeout int
+	Timeout      int
 	Continuation string
 }

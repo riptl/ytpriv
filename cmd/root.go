@@ -15,23 +15,23 @@ var concurrentRequests uint
 var logLevel string
 
 var Root = cobra.Command{
-	Use:   "ytwrk",
-	Short: "ytwrk is a fast and light YouTube metadata exporter",
-	Long: "https://github.com/terorie/ytwrk",
+	Use:              "ytwrk",
+	Short:            "ytwrk is a fast and light YouTube metadata exporter",
+	Long:             "https://github.com/terorie/ytwrk",
 	PersistentPreRun: rootPreRun,
 }
 
 func init() {
 	Root.Flags().Bool("version", false,
-		fmt.Sprintf("Print the version (" + Version +") and exit"))
+		fmt.Sprintf("Print the version ("+Version+") and exit"))
 
 	pf := Root.PersistentFlags()
 	pf.UintVarP(&concurrentRequests, "concurrency", "c", 4,
 		"Number of maximum concurrent HTTP requests")
 	pf.StringVarP(&logLevel, "log-level", "l", "",
-		"Log level. Valid options are:\n" +
-		"{debug, info, warn, error, fatal, panic}")
-	pf.StringVar(&net.Client.Name, "user-agent", "ytwrk/" + Version,
+		"Log level. Valid options are:\n"+
+			"{debug, info, warn, error, fatal, panic}")
+	pf.StringVar(&net.Client.Name, "user-agent", "ytwrk/"+Version,
 		"HTTP client user-agent")
 
 	Root.AddCommand(

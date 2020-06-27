@@ -16,8 +16,8 @@ func main() {
 	scn := bufio.NewScanner(os.Stdin)
 	wr := csv.NewWriter(os.Stdout)
 	defer wr.Flush()
-	buf := make([]byte, 0, 1024 * 1024)
-	scn.Buffer(buf, 128 * 1024 * 1024)
+	buf := make([]byte, 0, 1024*1024)
+	scn.Buffer(buf, 128*1024*1024)
 	var p fastjson.Parser
 	i := 0
 	for scn.Scan() {

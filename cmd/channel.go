@@ -5,7 +5,7 @@ import "github.com/spf13/cobra"
 var force bool
 
 var Channel = cobra.Command{
-	Use: "channel",
+	Use:   "channel",
 	Short: "Get information about a channel",
 }
 

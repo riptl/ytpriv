@@ -19,11 +19,15 @@ func ParseChannelVideoURLs(res *fasthttp.Response) ([]string, error) {
 	// Parse JSON
 	var p fastjson.Parser
 	rootObj, err := p.ParseBytes(res.Body())
-	if err != nil { return nil, err }
+	if err != nil {
+		return nil, err
+	}
 
 	// Root as array
 	root, err := rootObj.Array()
-	if err != nil { return nil, err }
+	if err != nil {
+		return nil, err
+	}
 
 	// Find response container
 	var container *fastjson.Value
@@ -33,7 +37,9 @@ func ParseChannelVideoURLs(res *fasthttp.Response) ([]string, error) {
 			break
 		}
 	}
-	if container == nil { return nil, MissingData }
+	if container == nil {
+		return nil, MissingData
+	}
 
 	// Get error obj
 	errorExists := container.Exists(
@@ -42,7 +48,9 @@ func ParseChannelVideoURLs(res *fasthttp.Response) ([]string, error) {
 		"errors",
 		"error",
 	)
-	if errorExists { return nil, ServerError }
+	if errorExists {
+		return nil, ServerError
+	}
 
 	// Get items from grid
 	itemsObj := container.Get(
@@ -52,11 +60,15 @@ func ParseChannelVideoURLs(res *fasthttp.Response) ([]string, error) {
 		"items",
 	)
 	// End of data
-	if itemsObj == nil { return nil, nil }
+	if itemsObj == nil {
+		return nil, nil
+	}
 
 	// Items as array
 	items, err := itemsObj.Array()
-	if err != nil { return nil, err }
+	if err != nil {
+		return nil, err
+	}
 
 	urls := make([]string, 0)
 
@@ -70,15 +82,19 @@ func ParseChannelVideoURLs(res *fasthttp.Response) ([]string, error) {
 			"webCommandMetadata",
 			"url",
 		)
-		if urlObj == nil { return nil, MissingData }
+		if urlObj == nil {
+			return nil, MissingData
+		}
 
 		// URL as string
 		urlBytes, err := urlObj.StringBytes()
-		if err != nil { return nil, err }
+		if err != nil {
+			return nil, err
+		}
 		url := string(urlBytes)
 
 		if strings.HasPrefix(url, "/watch?v") {
-			urls = append(urls, "https://www.youtube.com" + url)
+			urls = append(urls, "https://www.youtube.com"+url)
 		}
 	}
 	return urls, nil

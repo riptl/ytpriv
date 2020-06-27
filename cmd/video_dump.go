@@ -54,9 +54,13 @@ func doVideoDump(c *cobra.Command, args []string) (err error) {
 
 	flags := c.Flags()
 	nRelated, err := flags.GetUint("num-related")
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 	relatedList, err := flags.GetString("related-list")
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 
 	var d videoDump
 	go d.loadIDs(videoIDs, args, nRelated)
@@ -153,7 +157,7 @@ func (d *videoDump) loadIDs(videoIDs chan<- string, args []string, nRelated uint
 
 		if !ok {
 			logrus.Warnf("Not enough videos found (%d missing)",
-				nRelated - i - 1)
+				nRelated-i-1)
 			return
 		}
 

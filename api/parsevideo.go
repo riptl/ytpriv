@@ -45,10 +45,14 @@ func ParseVideoBody(v *data.Video, buf []byte, res *fasthttp.Response) error {
 	// Parse JSON
 	var p fastjson.Parser
 	root, err := p.ParseBytes(buf)
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 
 	rootArray := root.GetArray()
-	if rootArray == nil { return unexpectedType }
+	if rootArray == nil {
+		return unexpectedType
+	}
 
 	// Get interesting objects
 	var pageResponse *fastjson.Value
@@ -66,7 +70,9 @@ func ParseVideoBody(v *data.Video, buf []byte, res *fasthttp.Response) error {
 		}
 	}
 
-	if playerResponse == nil { return errors.New("no video details") }
+	if playerResponse == nil {
+		return errors.New("no video details")
+	}
 
 	// Playability status
 	playability := playerResponse.Get("playabilityStatus")
@@ -89,8 +95,9 @@ func ParseVideoBody(v *data.Video, buf []byte, res *fasthttp.Response) error {
 		v.NoEmbed = !playableInEmbed
 	}
 
-	if err := parseVideoDetails(v, playerResponse.Get("videoDetails"));
-		err != nil { return err }
+	if err := parseVideoDetails(v, playerResponse.Get("videoDetails")); err != nil {
+		return err
+	}
 	if err := parseMicroformat(v, playerResponse.Get("microformat")); err != nil {
 		return err
 	}
@@ -99,16 +106,21 @@ func ParseVideoBody(v *data.Video, buf []byte, res *fasthttp.Response) error {
 
 	// Parse video infos
 	watchNextContents := watchNextResults.GetArray("results", "results", "contents")
-	if err := parseVideoInfo(v, watchNextContents);
-		err != nil { return err }
+	if err := parseVideoInfo(v, watchNextContents); err != nil {
+		return err
+	}
 
 	if res != nil {
 		var visitorInfo, ysc, cookie string
 		var ok bool
 		visitorInfo, ok = parseSetCookie(res, "VISITOR_INFO1_LIVE")
-		if !ok { goto cookieFailed }
+		if !ok {
+			goto cookieFailed
+		}
 		ysc, ok = parseSetCookie(res, "YSC")
-		if !ok { goto cookieFailed }
+		if !ok {
+			goto cookieFailed
+		}
 		cookie = visitorInfo + "; " + ysc
 		parseCommentToken(internal, watchNextContents, v.ID, cookie, xsrfToken)
 	}
@@ -122,8 +134,9 @@ cookieFailed:
 
 	// Parse player args
 	if playerArgs != nil {
-		if err := parsePlayerArgs(v, playerArgs);
-			err != nil { return err }
+		if err := parsePlayerArgs(v, playerArgs); err != nil {
+			return err
+		}
 	}
 
 	// Get captions
@@ -155,7 +168,9 @@ func parseVideoDetails(v *data.Video, videoDetails *fastjson.Value) error {
 	keywords := videoDetails.GetArray("keywords")
 	for _, keywordValue := range keywords {
 		keywordBytes, _ := keywordValue.StringBytes()
-		if keywordBytes == nil { continue }
+		if keywordBytes == nil {
+			continue
+		}
 
 		keyword := string(keywordBytes)
 		v.Tags = append(v.Tags, keyword)
@@ -175,11 +190,15 @@ func parseVideoDetails(v *data.Video, videoDetails *fastjson.Value) error {
 	// Get view count
 	viewCountStr := string(videoDetails.GetStringBytes("viewCount"))
 	viewCount64, err := strconv.ParseUint(viewCountStr, 10, 64)
-	if err == nil { v.Views = viewCount64 }
+	if err == nil {
+		v.Views = viewCount64
+	}
 	// Get duration
 	lengthStr := string(videoDetails.GetStringBytes("lengthSeconds"))
 	length64, err := strconv.ParseUint(lengthStr, 10, 64)
-	if err == nil { v.Duration = length64 }
+	if err == nil {
+		v.Duration = length64
+	}
 
 	return nil
 }
@@ -310,9 +329,9 @@ func parseCommentToken(data *videoData, contentList []*fastjson.Value, videoID s
 		}
 		data.continuation = &CommentContinuation{
 			VideoID: videoID,
-			Cookie: cookie,
-			Token:  continuation,
-			XSRF:   xsrfToken,
+			Cookie:  cookie,
+			Token:   continuation,
+			XSRF:    xsrfToken,
 		}
 		return
 	}

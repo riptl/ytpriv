@@ -3,7 +3,7 @@ package cmd
 import "github.com/spf13/cobra"
 
 var Video = cobra.Command{
-	Use: "video",
+	Use:   "video",
 	Short: "Get information about a video",
 }
 

@@ -16,9 +16,9 @@ type Comment struct {
 	CreatedAfter  int64  `json:"created_after"`
 
 	// Malleable: Author-triggered changes
-	Author    string          `json:"author"`
-	Content   json.RawMessage `json:"content"`
-	Edited    bool            `json:"edited,omitempty"`
+	Author  string          `json:"author"`
+	Content json.RawMessage `json:"content"`
+	Edited  bool            `json:"edited,omitempty"`
 
 	// Dynamic
 	CrawledAt  int64  `json:"crawled_at"`

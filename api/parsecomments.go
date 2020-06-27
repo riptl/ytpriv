@@ -221,21 +221,19 @@ func parsePublishedTime(str string) (after int64, before int64, err error) {
 	return beforeT.Unix(), afterT.Unix(), nil
 }
 
-
 type CommentPage struct {
-	Comments []data.Comment
+	Comments         []data.Comment
 	CommentParseErrs []error
-	MoreComments bool
-	Continuation *CommentContinuation
-	TopComments *CommentContinuation
-	NewComments *CommentContinuation
+	MoreComments     bool
+	Continuation     *CommentContinuation
+	TopComments      *CommentContinuation
+	NewComments      *CommentContinuation
 }
 
 type CommentContinuation struct {
-	VideoID string
+	VideoID  string
 	ParentID string
-	Cookie string
-	Token  string
-	XSRF   string
+	Cookie   string
+	Token    string
+	XSRF     string
 }
-

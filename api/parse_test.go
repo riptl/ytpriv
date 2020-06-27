@@ -16,7 +16,7 @@ func TestParseDuration(t *testing.T) {
 	for i := range tests {
 		n, err := ParseDuration(tests[i])
 		if n != results[i] {
-			t.Errorf("%s => \n" +
+			t.Errorf("%s => \n"+
 				"Expected: %d, got: %d",
 				tests[i], results[i], n,
 			)
@@ -36,7 +36,7 @@ func TestParseDuration(t *testing.T) {
 
 	for _, fail := range fails {
 		if n, err := ParseDuration(fail); err == nil {
-			t.Errorf("Didn't return an an error.\n" +
+			t.Errorf("Didn't return an an error.\n"+
 				"(%s => %d)", fail, n)
 		}
 	}
@@ -56,7 +56,7 @@ func TestExtractNumber(t *testing.T) {
 	for i := range tests {
 		n, err := ExtractNumber(tests[i])
 		if n != results[i] {
-			t.Errorf("%s => \n" +
+			t.Errorf("%s => \n"+
 				"Expected: %d, got: %d",
 				tests[i], results[i], n,
 			)

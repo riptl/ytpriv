@@ -13,12 +13,12 @@ func main() {
 	dec := json.NewDecoder(os.Stdin)
 	i := 0
 	type line struct {
-		Id string `json:"id"`
-		Vid string `json:"video_id"`
-		Aid string `json:"author_id"`
-		Cwat json.Number `json:"crawled_at"`
-		Likes json.Number `json:"likes"`
-		Aname string `json:"author"`
+		Id      string          `json:"id"`
+		Vid     string          `json:"video_id"`
+		Aid     string          `json:"author_id"`
+		Cwat    json.Number     `json:"crawled_at"`
+		Likes   json.Number     `json:"likes"`
+		Aname   string          `json:"author"`
 		Content json.RawMessage `json:"content"`
 	}
 
@@ -39,7 +39,9 @@ func main() {
 		}
 
 		content, err := json.Marshal(l.Content)
-		if err != nil { panic(err) }
+		if err != nil {
+			panic(err)
+		}
 
 		fmt.Printf("%s\t%s\t%s\t%s\t%s\t%s\t%s\n", l.Id, l.Vid, l.Aid, l.Cwat, l.Likes, l.Aname, content)
 	}

@@ -18,10 +18,10 @@ import (
 var continuationLimitReached = fmt.Errorf("continuation limit reached")
 
 var videoCommentsCmd = cobra.Command{
-	Use: "comments [video...]",
+	Use:   "comments [video...]",
 	Short: "Scrape comments of videos",
-	Args: cobra.ArbitraryArgs,
-	Run: cmdFunc(doVideoComments),
+	Args:  cobra.ArbitraryArgs,
+	Run:   cmdFunc(doVideoComments),
 }
 
 func init() {
@@ -94,10 +94,14 @@ func videoCommentDumpScheduler(comments chan<- data.Comment, videoIDs <-chan str
 
 func streamVideoComments(comments chan<- data.Comment, videoID string) error {
 	videoID, err := api.GetVideoID(videoID)
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 
 	vid, err := simpleGetVideo(videoID)
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 
 	cont := api.InitialCommentContinuation(vid)
 	if cont == nil {
@@ -116,7 +120,9 @@ func simpleGetVideo(videoID string) (v *data.Video, err error) {
 	defer fasthttp.ReleaseResponse(res)
 
 	err = net.Client.Do(videoReq, res)
-	if err != nil { return nil, err }
+	if err != nil {
+		return nil, err
+	}
 
 	v = new(data.Video)
 	v.ID = videoID
@@ -185,7 +191,9 @@ func nextCommentPage(cont *api.CommentContinuation, i int) (page api.CommentPage
 	defer fasthttp.ReleaseRequest(req)
 	res := fasthttp.AcquireResponse()
 	err = net.Client.Do(req, res)
-	if err != nil { return page, err }
+	if err != nil {
+		return page, err
+	}
 	switch res.StatusCode() {
 	case fasthttp.StatusRequestEntityTooLarge,
 		fasthttp.StatusRequestURITooLong:
@@ -193,7 +201,9 @@ func nextCommentPage(cont *api.CommentContinuation, i int) (page api.CommentPage
 	}
 
 	page, err = api.ParseCommentsPage(res, cont)
-	if err != nil { return page, err }
+	if err != nil {
+		return page, err
+	}
 	for _, cErr := range page.CommentParseErrs {
 		logrus.WithError(cErr).Error("Failed to parse comment")
 	}
@@ -201,12 +211,12 @@ func nextCommentPage(cont *api.CommentContinuation, i int) (page api.CommentPage
 	if cont.ParentID == "" {
 		logrus.WithFields(logrus.Fields{
 			"video_id": cont.VideoID,
-			"index": i,
+			"index":    i,
 		}).Infof("Page")
 	} else {
 		logrus.WithFields(logrus.Fields{
-			"video_id": cont.VideoID,
-			"index": i,
+			"video_id":  cont.VideoID,
+			"index":     i,
 			"parent_id": cont.ParentID,
 		}).Infof("Sub page")
 	}

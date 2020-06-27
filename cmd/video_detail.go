@@ -12,17 +12,19 @@ import (
 )
 
 var videoDetailCmd = cobra.Command{
-	Use: "detail <video>",
+	Use:   "detail <video>",
 	Short: "Get details about a video",
-	Args: cobra.ExactArgs(1),
-	Run: cmdFunc(doVideoDetail),
+	Args:  cobra.ExactArgs(1),
+	Run:   cmdFunc(doVideoDetail),
 }
 
 func doVideoDetail(_ *cobra.Command, args []string) error {
 	videoID := args[0]
 
 	videoID, err := api.GetVideoID(videoID)
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 
 	videoReq := api.GrabVideo(videoID)
 
@@ -30,15 +32,21 @@ func doVideoDetail(_ *cobra.Command, args []string) error {
 	defer fasthttp.ReleaseResponse(res)
 
 	err = net.Client.Do(videoReq, res)
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 
 	var v data.Video
 	v.ID = videoID
 	err = api.ParseVideo(&v, res)
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 
 	bytesMain, err := json.MarshalIndent(&v, "", "\t")
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 
 	fmt.Println(string(bytesMain))
 	fmt.Println()

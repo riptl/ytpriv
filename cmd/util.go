@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func cmdFunc(f func(*cobra.Command, []string)error) func(*cobra.Command, []string) {
+func cmdFunc(f func(*cobra.Command, []string) error) func(*cobra.Command, []string) {
 	return func(c *cobra.Command, args []string) {
 		err := f(c, args)
 		if err != nil {

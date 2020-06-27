@@ -19,12 +19,16 @@ func TestVideo(t *testing.T) {
 	defer fasthttp.ReleaseResponse(res)
 
 	err := net.Client.Do(req, res)
-	if err != nil { assert.FailNow(t, err.Error()) }
+	if err != nil {
+		assert.FailNow(t, err.Error())
+	}
 
 	var v data.Video
 	v.ID = "uOXLKPCs54c"
 	err = ParseVideo(&v, res)
-	if err != nil { assert.FailNow(t, err.Error()) }
+	if err != nil {
+		assert.FailNow(t, err.Error())
+	}
 	assert.NotZero(t, len(v.RelatedVideos), "No related videos")
 
 	uploadDate := time.Unix(v.Uploaded, 0)
@@ -83,12 +87,16 @@ func testVideoRestricted(t *testing.T) {
 	defer fasthttp.ReleaseResponse(res)
 
 	err := net.Client.Do(req, res)
-	if err != nil { assert.FailNow(t, err.Error()) }
+	if err != nil {
+		assert.FailNow(t, err.Error())
+	}
 
 	v := data.Video{ID: "6kLq3WMV1nU"}
 	// Age-restricted vids don't have recommendations
 	err = ParseVideo(&v, res)
-	if err != nil { assert.FailNow(t, err.Error()) }
+	if err != nil {
+		assert.FailNow(t, err.Error())
+	}
 
 	assert.Equal(t, "Dedication To My Ex (Miss That) (Lyric Video)", v.Title)
 	assert.Equal(t, "LloydVEVO", v.Uploader)
@@ -129,22 +137,24 @@ func testVideoDescription(t *testing.T) {
 	defer fasthttp.ReleaseResponse(res)
 
 	err := net.Client.Do(req, res)
-	if err != nil { assert.FailNow(t, err.Error()) }
+	if err != nil {
+		assert.FailNow(t, err.Error())
+	}
 
 	v := data.Video{ID: "kj9mFK62c6E"}
 	err = ParseVideo(&v, res)
-	if err != nil { assert.FailNow(t, err.Error()) }
+	if err != nil {
+		assert.FailNow(t, err.Error())
+	}
 
-	const descTest4start =
-`never buy think pad hyper;
+	const descTest4start = `never buy think pad hyper;
 
 Test for project:
 https://example.org/ gud link
 some unicode: ¥≈ç√∫~
 some attacks: `
 
-	const descTest4stop =
-` \n
+	const descTest4stop = ` \n
 
 *a* _b_ -c-`
 
@@ -168,11 +178,15 @@ func testVideoUnlisted(t *testing.T) {
 	defer fasthttp.ReleaseResponse(res)
 
 	err := net.Client.Do(req, res)
-	if err != nil { assert.FailNow(t, err.Error()) }
+	if err != nil {
+		assert.FailNow(t, err.Error())
+	}
 
 	v := data.Video{ID: "RD5otQyBFqc"}
 	err = ParseVideo(&v, res)
-	if err != nil { assert.FailNow(t, err.Error()) }
+	if err != nil {
+		assert.FailNow(t, err.Error())
+	}
 
 	assert.Equal(t, "How Northern Lights Are Created", v.Title)
 	assert.Equal(t, "Love Nature", v.Uploader)

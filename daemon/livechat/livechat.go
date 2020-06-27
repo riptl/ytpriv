@@ -120,14 +120,14 @@ func (d *Daemon) dump(id string) (err error) {
 	prog := d.active[id]
 	d.lock.Unlock()
 
-	defer func(){
+	defer func() {
 		d.lock.Lock()
 		delete(d.active, id)
 		d.lock.Unlock()
 	}()
 
-	filePath := filepath.Join(basePath, id + ".ndjson")
-	f, err := os.OpenFile(filePath, os.O_CREATE | os.O_APPEND | os.O_WRONLY, 0777)
+	filePath := filepath.Join(basePath, id+".ndjson")
+	f, err := os.OpenFile(filePath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0777)
 	if err != nil {
 		return err
 	}
