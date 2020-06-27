@@ -50,16 +50,13 @@ func TestVideo(t *testing.T) {
 	assert.NotZero(t, v.Views, "views")
 
 	// Check formats
-	formats := []string{"43", "18", "36", "17"}
-	assert.Equal(t, len(formats), len(v.Formats), "format count")
-	for i, fmt := range v.Formats {
-		assert.Equal(t, formats[i], fmt, "format ID", i)
-	}
+	formats := []string{"18", "134", "243", "133", "242", "160", "278", "140", "251"}
+	assert.Equal(t, formats, v.Formats)
 }
 
 // Deleted video test
-func testVideoDeleted(t *testing.T, a *API) {
-	req := a.GrabVideo("chGl0_nFyqg")
+func testVideoDeleted(t *testing.T) {
+	req := GrabVideo("chGl0_nFyqg")
 
 	res := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(res)
@@ -70,7 +67,7 @@ func testVideoDeleted(t *testing.T, a *API) {
 	}
 
 	v := data.Video{ID: "chGl0_nFyqg"}
-	err = a.ParseVideo(&v, res)
+	err = ParseVideo(&v, res)
 	if err == nil {
 		assert.FailNow(t, "no error on unavailable video")
 	} else if err != VideoUnavailable {
@@ -79,8 +76,8 @@ func testVideoDeleted(t *testing.T, a *API) {
 }
 
 // Age-restricted video test
-func testVideoRestricted(t *testing.T, a *API) {
-	req := a.GrabVideo("6kLq3WMV1nU")
+func testVideoRestricted(t *testing.T) {
+	req := GrabVideo("6kLq3WMV1nU")
 
 	res := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(res)
@@ -90,7 +87,7 @@ func testVideoRestricted(t *testing.T, a *API) {
 
 	v := data.Video{ID: "6kLq3WMV1nU"}
 	// Age-restricted vids don't have recommendations
-	err = a.ParseVideo(&v, res)
+	err = ParseVideo(&v, res)
 	if err != nil { assert.FailNow(t, err.Error()) }
 
 	assert.Equal(t, "Dedication To My Ex (Miss That) (Lyric Video)", v.Title)
@@ -125,8 +122,8 @@ func testVideoRestricted(t *testing.T, a *API) {
 }
 
 // Description test
-func testVideoDescription(t *testing.T, a *API) {
-	req := a.GrabVideo("kj9mFK62c6E")
+func testVideoDescription(t *testing.T) {
+	req := GrabVideo("kj9mFK62c6E")
 
 	res := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(res)
@@ -135,7 +132,7 @@ func testVideoDescription(t *testing.T, a *API) {
 	if err != nil { assert.FailNow(t, err.Error()) }
 
 	v := data.Video{ID: "kj9mFK62c6E"}
-	err = a.ParseVideo(&v, res)
+	err = ParseVideo(&v, res)
 	if err != nil { assert.FailNow(t, err.Error()) }
 
 	const descTest4start =
@@ -164,8 +161,8 @@ some attacks: `
 }
 
 // Unlisted video test
-func testVideoUnlisted(t *testing.T, a *API) {
-	req := a.GrabVideo("RD5otQyBFqc")
+func testVideoUnlisted(t *testing.T) {
+	req := GrabVideo("RD5otQyBFqc")
 
 	res := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(res)
@@ -174,7 +171,7 @@ func testVideoUnlisted(t *testing.T, a *API) {
 	if err != nil { assert.FailNow(t, err.Error()) }
 
 	v := data.Video{ID: "RD5otQyBFqc"}
-	err = a.ParseVideo(&v, res)
+	err = ParseVideo(&v, res)
 	if err != nil { assert.FailNow(t, err.Error()) }
 
 	assert.Equal(t, "How Northern Lights Are Created", v.Title)

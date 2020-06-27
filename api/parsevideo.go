@@ -91,6 +91,9 @@ func ParseVideoBody(v *data.Video, buf []byte, res *fasthttp.Response) error {
 
 	if err := parseVideoDetails(v, playerResponse.Get("videoDetails"));
 		err != nil { return err }
+	if err := parseMicroformat(v, playerResponse.Get("microformat")); err != nil {
+		return err
+	}
 
 	watchNextResults := pageResponse.Get("contents", "twoColumnWatchNextResults")
 
@@ -181,6 +184,12 @@ func parseVideoDetails(v *data.Video, videoDetails *fastjson.Value) error {
 	return nil
 }
 
+func parseMicroformat(v *data.Video, microformat *fastjson.Value) error {
+	renderer := microformat.Get("playerMicroformatRenderer")
+	v.Genre = string(renderer.GetStringBytes("category"))
+	return nil
+}
+
 func parseVideoInfo(v *data.Video, videoInfo []*fastjson.Value) error {
 	var primary *fastjson.Value
 	var secondary *fastjson.Value
@@ -222,8 +231,11 @@ func parseVideoInfo(v *data.Video, videoInfo []*fastjson.Value) error {
 	dateText = strings.TrimPrefix(dateText, "Started streaming on ")
 	dateText = strings.TrimPrefix(dateText, "Streamed live on ")
 
-	date, err := time.Parse("01.02.2006", dateText)
-	if err == nil { v.Uploaded = date.Unix() }
+	if date, err := time.Parse("Jan 2, 2006", dateText); err == nil {
+		v.Uploaded = date.Unix()
+	} else if date, err := time.Parse("01.02.2006", dateText); err == nil {
+		v.Uploaded = date.Unix()
+	}
 
 	// Get category
 	// Find category row
@@ -232,8 +244,6 @@ func parseVideoInfo(v *data.Video, videoInfo []*fastjson.Value) error {
 		row := obj.Get("metadataRowRenderer")
 		title := string(row.GetStringBytes("title", "simpleText"))
 		switch title {
-		case "Category":
-			v.Genre = string(row.GetStringBytes("contents", "0", "runs", "0", "text"))
 		case "License":
 			v.License = string(row.GetStringBytes("contents", "0", "runs", "0", "text"))
 		}
@@ -243,10 +253,25 @@ func parseVideoInfo(v *data.Video, videoInfo []*fastjson.Value) error {
 }
 
 func parsePlayerArgs(v *data.Video, args *fastjson.Value) error {
-	fmts := string(args.GetStringBytes("fmt_list"))
-	fmtList, err := ParseFormatList(fmts)
-	if err != nil { return err }
-	v.Formats = fmtList
+	newPlayerResJSON := args.GetStringBytes("player_response")
+	if len(newPlayerResJSON) == 0 {
+		return nil
+	}
+	res, err := fastjson.ParseBytes(newPlayerResJSON)
+	if err != nil {
+		return err
+	}
+	streamingData := res.Get("streamingData")
+	for _, format := range streamingData.GetArray("formats") {
+		if itag := format.GetInt("itag"); itag != 0 {
+			v.Formats = append(v.Formats, strconv.Itoa(itag))
+		}
+	}
+	for _, format := range streamingData.GetArray("adaptiveFormats") {
+		if itag := format.GetInt("itag"); itag != 0 {
+			v.Formats = append(v.Formats, strconv.Itoa(itag))
+		}
+	}
 	return nil
 }
 

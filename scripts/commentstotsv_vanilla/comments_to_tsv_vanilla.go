@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/terorie/go-quotecsv"
 	"github.com/valyala/fastjson"
 )
 
