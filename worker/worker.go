@@ -32,8 +32,7 @@ func main() {
 	tlsConfig := &tls.Config{
 		MinVersion: tls.VersionTLS13,
 	}
-	// TODO remove token
-	token := pflag.String("token", "HCyp15tCAAhXAZlV1WiHSy7ADxenGX_CXRq9dvnAzdT30", "Worker auth token")
+	token := pflag.String("token", "", "Worker auth token")
 	client, err := grpc.Dial(
 		"worker.hive.od2.network:443",
 		grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)),
