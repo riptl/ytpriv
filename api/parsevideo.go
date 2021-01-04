@@ -62,7 +62,11 @@ func ParseVideoBody(v *data.Video, buf []byte, res *fasthttp.Response) error {
 	for _, sub := range rootArray {
 		if playerResponse == nil {
 			playerResponse = sub.Get("playerResponse")
+		}
+		if pageResponse == nil {
 			pageResponse = sub.Get("response")
+		}
+		if xsrfToken == "" {
 			xsrfToken = string(sub.GetStringBytes("xsrf_token"))
 		}
 		if playerArgs == nil {
@@ -72,6 +76,9 @@ func ParseVideoBody(v *data.Video, buf []byte, res *fasthttp.Response) error {
 
 	if playerResponse == nil {
 		return errors.New("no video details")
+	}
+	if pageResponse == nil {
+		return errors.New("no page response")
 	}
 
 	// Playability status

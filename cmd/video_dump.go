@@ -124,12 +124,16 @@ func doVideoDump(c *cobra.Command, args []string) (err error) {
 }
 
 func (d *videoDump) loadIDs(videoIDs chan<- string, args []string, nRelated uint) {
+	var wg sync.WaitGroup
 	defer close(videoIDs)
+	defer wg.Wait()
 
 	// Create argument channels
 	jobs := make(chan string)
 	go stdinOrArgs(jobs, args)
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		for job := range jobs {
 			videoID, err := api.GetVideoID(job)
 			if err != nil {
