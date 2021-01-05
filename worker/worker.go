@@ -33,6 +33,7 @@ func main() {
 		MinVersion: tls.VersionTLS13,
 	}
 	token := pflag.String("token", "", "Worker auth token")
+	pflag.Parse()
 	client, err := grpc.Dial(
 		"worker.hive.od2.network:443",
 		grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)),
@@ -78,6 +79,17 @@ func main() {
 		}
 		log.Info("Closed stream")
 	}()
+	assigns, err := assignments.StreamAssignments(ctx, &types.StreamAssignmentsRequest{StreamId: stream.StreamId})
+	if err != nil {
+		log.Fatal("Connection to assignments stream failed", zap.Error(err))
+	}
+	log.Info("Connected to assignments stream")
+	defer func() {
+		if _, err := assignments.CloseAssignmentsStream(ctx, &types.CloseAssignmentsStreamRequest{StreamId: stream.StreamId}); err != nil {
+			log.Error("Error closing assignments stream")
+		}
+		log.Info("Closed assignments stream")
+	}()
 	for {
 		wanted, err := assignments.WantAssignments(ctx, &types.WantAssignmentsRequest{
 			StreamId:     stream.StreamId,
@@ -89,14 +101,10 @@ func main() {
 		log.Info("Requested assignments",
 			zap.Int32("watermark", wanted.Watermark),
 			zap.Int32("added_watermark", wanted.AddedWatermark))
-		assigns, err := assignments.StreamAssignments(ctx, &types.StreamAssignmentsRequest{StreamId: stream.StreamId})
-		if err != nil {
-			log.Fatal("Connection to assignments stream failed", zap.Error(err))
-		}
-		log.Info("Connected to assignments stream")
 		batch, err := assigns.Recv()
 		if err != nil {
-			log.Fatal("Failed to recv assign", zap.Error(err))
+			log.Error("Failed to recv assign", zap.Error(err))
+			break
 		}
 		log.Info("Got batch", zap.Int("batch_size", len(batch.Assignments)))
 		for _, assign := range batch.Assignments {
@@ -113,17 +121,20 @@ func main() {
 			req := api.GrabVideo(videoID)
 			res := fasthttp.AcquireResponse()
 			if err := fasthttp.Do(req, res); err != nil {
-				log.Fatal("Failed to grab video", zap.Error(err))
+				log.Error("Failed to grab video", zap.Error(err))
+				break
 			}
 			var v data.Video
 			if err := api.ParseVideo(&v, res); err != nil {
-				log.Fatal("Failed to parse video", zap.Error(err))
+				log.Error("Failed to parse video", zap.Error(err))
+				break
 			}
 			var discovered []*types.ItemPointer
 			for _, rel := range v.RelatedVideos {
 				cid, err := decodeVideoID(rel.ID)
 				if err != nil {
-					log.Fatal("Discovered weird video ID", zap.Error(err), zap.String("video_id", rel.ID))
+					log.Error("Discovered weird video ID", zap.Error(err), zap.String("video_id", rel.ID))
+					break
 				}
 				discovered = append(discovered, &types.ItemPointer{
 					Dst: &types.ItemLocator{
@@ -136,7 +147,8 @@ func main() {
 			if _, err := discovery.ReportDiscovered(ctx, &types.ReportDiscoveredRequest{
 				Pointers: discovered,
 			}); err != nil {
-				log.Fatal("Failed to report discovered", zap.Error(err))
+				log.Error("Failed to report discovered", zap.Error(err))
+				break
 			}
 			log.Info("Reported discovered", zap.Int("discovered_count", len(discovered)))
 		}
