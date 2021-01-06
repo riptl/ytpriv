@@ -3,6 +3,7 @@ module github.com/terorie/ytwrk
 go 1.13
 
 require (
+	github.com/cenkalti/backoff/v4 v4.1.0
 	github.com/golang/protobuf v1.4.2
 	github.com/gorilla/rpc v1.2.0
 	github.com/sirupsen/logrus v1.7.0
@@ -12,7 +13,7 @@ require (
 	github.com/terorie/go-quotecsv v1.0.1
 	github.com/valyala/fasthttp v1.19.0
 	github.com/valyala/fastjson v1.6.3
-	go.od2.network/hive v0.0.0-20210106030200-56266918a29a
+	go.od2.network/hive v0.0.0-20210106041530-7b5644cf48da
 	go.uber.org/zap v1.16.0
 	google.golang.org/grpc v1.34.0
 )

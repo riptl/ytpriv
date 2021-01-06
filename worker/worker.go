@@ -7,33 +7,49 @@ import (
 	"encoding/binary"
 	"fmt"
 	"strconv"
+	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/spf13/pflag"
 	"github.com/terorie/ytwrk/api"
 	"github.com/terorie/ytwrk/data"
 	"github.com/valyala/fasthttp"
+	"go.od2.network/hive/pkg/appctx"
 	"go.od2.network/hive/pkg/auth"
 	"go.od2.network/hive/pkg/types"
+	"go.od2.network/hive/pkg/worker"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
 
 func main() {
+	// Environment
 	logConfig := zap.NewDevelopmentConfig()
 	logConfig.DisableStacktrace = true
 	logConfig.DisableCaller = true
+	logConfig.Level.SetLevel(zapcore.DebugLevel)
 	log, err := logConfig.Build()
 	if err != nil {
 		panic(err)
 	}
 
+	// Flags
+	token := pflag.String("token", "", "Worker auth token")
+	routines := pflag.Uint("routines", 16, "Number of worker routines")
+	prefetch := pflag.Uint("prefetch", 256, "Assignment prefetch")
+	pflag.Parse()
+	if *routines <= 0 {
+		log.Fatal("Invalid routines flag", zap.Uint("flag_routines", *routines))
+	}
+
+	// Connect to gRPC API
+	ctx := appctx.Context()
 	tlsConfig := &tls.Config{
 		MinVersion: tls.VersionTLS13,
 	}
-	token := pflag.String("token", "", "Worker auth token")
-	pflag.Parse()
 	client, err := grpc.Dial(
 		"worker.hive.od2.network:443",
 		grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)),
@@ -42,125 +58,82 @@ func main() {
 	if err != nil {
 		log.Fatal("Failed to connect to worker API", zap.Error(err))
 	}
+
+	// Construct worker
 	assignments := types.NewAssignmentsClient(client)
 	discovery := types.NewDiscoveryClient(client)
-
-	ctx := context.Background()
-	/*_, err = discovery.ReportDiscovered(ctx, &types.ReportDiscoveredRequest{
-		Pointers: []*types.ItemPointer{
-			{
-				Dst: &types.ItemLocator{
-					Collection: "yt.videos",
-					//Id:         strconv.FormatInt(mustDecodeVideoID("YPiOWJDdChM"), 10),
-					Id:         strconv.FormatInt(mustDecodeVideoID("1uei2iNwyOo"), 10),
-					//Id:         strconv.FormatInt(mustDecodeVideoID("h2f0vqgYdLc"), 10),
-					//Id:         strconv.FormatInt(mustDecodeVideoID("h2f0vqgYdLc"), 10),
-				},
-				Timestamp: ptypes.TimestampNow(),
-			},
+	simpleWorker := &worker.Simple{
+		Assignments:   assignments,
+		Log:           log.Named("worker"),
+		Handler:       &Handler{
+			Log:       log.Named("handler"),
+			Discovery: discovery,
 		},
-	})*/
-	if err != nil {
-		log.Error("Failed to discover video", zap.Error(err))
+		Routines:      *routines,
+		Prefetch:      *prefetch,
+		GracePeriod:   30 * time.Second,
+		FillRate:      3 * time.Second,
+		StreamBackoff: backoff.WithMaxRetries(backoff.NewConstantBackOff(3 * time.Second), 16),
+		APIBackoff:    backoff.WithMaxRetries(backoff.NewConstantBackOff(2 * time.Second), 32),
 	}
-	log.Info("Inserted seed item")
-	stream, err := assignments.OpenAssignmentsStream(ctx, &types.OpenAssignmentsStreamRequest{})
-	if err != nil {
-		log.Fatal("Failed to open assignments stream", zap.Error(err))
-		return
-	}
-	log.Info("Opened stream", zap.Int64("stream_id", stream.StreamId))
-	defer func() {
-		_, err = assignments.CloseAssignmentsStream(ctx, &types.CloseAssignmentsStreamRequest{
-			StreamId: stream.StreamId,
-		})
-		if err != nil {
-			log.Error("Failed to close stream", zap.Error(err))
-		}
-		log.Info("Closed stream")
-	}()
-	assigns, err := assignments.StreamAssignments(ctx, &types.StreamAssignmentsRequest{StreamId: stream.StreamId})
-	if err != nil {
-		log.Fatal("Connection to assignments stream failed", zap.Error(err))
-	}
-	log.Info("Connected to assignments stream")
-	defer func() {
-		if _, err := assignments.CloseAssignmentsStream(ctx, &types.CloseAssignmentsStreamRequest{StreamId: stream.StreamId}); err != nil {
-			log.Error("Error closing assignments stream")
-		}
-		log.Info("Closed assignments stream")
-	}()
-	for {
-		wanted, err := assignments.WantAssignments(ctx, &types.WantAssignmentsRequest{
-			StreamId:     stream.StreamId,
-			AddWatermark: 1,
-		})
-		if err != nil {
-			log.Fatal("Failed to request assignments", zap.Error(err))
-		}
-		log.Info("Requested assignments",
-			zap.Int32("watermark", wanted.Watermark),
-			zap.Int32("added_watermark", wanted.AddedWatermark))
-		batch, err := assigns.Recv()
-		if err != nil {
-			log.Error("Failed to recv assign", zap.Error(err))
-			break
-		}
-		log.Info("Got batch", zap.Int("batch_size", len(batch.Assignments)))
-		for _, assign := range batch.Assignments {
-			compactID, err := strconv.ParseInt(assign.Locator.Id, 10, 64)
-			if err != nil {
-				panic(err)
-			}
-			videoID := encodeVideoID(compactID)
-			log.Info("Got assignment",
-				zap.Int32("msg.partition", assign.KafkaPointer.Partition),
-				zap.Int64("msg.offset", assign.KafkaPointer.Offset),
-				zap.String("item.id", assign.Locator.Id),
-				zap.String("video_id", videoID))
-			req := api.GrabVideo(videoID)
-			res := fasthttp.AcquireResponse()
-			if err := fasthttp.Do(req, res); err != nil {
-				log.Error("Failed to grab video", zap.Error(err))
-				break
-			}
-			var v data.Video
-			if err := api.ParseVideo(&v, res); err != nil {
-				log.Error("Failed to parse video", zap.Error(err))
-				break
-			}
-			var discovered []*types.ItemPointer
-			for _, rel := range v.RelatedVideos {
-				cid, err := decodeVideoID(rel.ID)
-				if err != nil {
-					log.Error("Discovered weird video ID", zap.Error(err), zap.String("video_id", rel.ID))
-					break
-				}
-				discovered = append(discovered, &types.ItemPointer{
-					Dst: &types.ItemLocator{
-						Collection: "yt.videos",
-						Id:         strconv.FormatInt(cid, 10),
-					},
-					Timestamp: ptypes.TimestampNow(),
-				})
-			}
-			if _, err := discovery.ReportDiscovered(ctx, &types.ReportDiscoveredRequest{
-				Pointers: discovered,
-			}); err != nil {
-				log.Error("Failed to report discovered", zap.Error(err))
-				break
-			}
-			log.Info("Reported discovered", zap.Int("discovered_count", len(discovered)))
-		}
+
+	if err := simpleWorker.Run(ctx); err != nil {
+		log.Warn("Worker exited")
 	}
 }
 
-func mustDecodeVideoID(id string) int64 {
-	num, err := decodeVideoID(id)
+// Handler discovers videos from YouTube.
+type Handler struct {
+	Log       *zap.Logger
+	Discovery types.DiscoveryClient
+}
+
+// WorkAssignment processes a single video.
+func (h *Handler) WorkAssignment(ctx context.Context, assign *types.Assignment) types.TaskStatus {
+	compactID, err := strconv.ParseInt(assign.Locator.Id, 10, 64)
 	if err != nil {
 		panic(err)
 	}
-	return num
+	videoID := encodeVideoID(compactID)
+	h.Log.Info("Got assignment",
+		zap.Int32("msg.partition", assign.KafkaPointer.Partition),
+		zap.Int64("msg.offset", assign.KafkaPointer.Offset),
+		zap.String("item.id", assign.Locator.Id),
+		zap.String("video_id", videoID))
+	req := api.GrabVideo(videoID)
+	res := fasthttp.AcquireResponse()
+	if err := fasthttp.Do(req, res); err != nil {
+		h.Log.Error("Failed to grab video", zap.Error(err))
+		return types.TaskStatus_CLIENT_FAILURE
+	}
+	var v data.Video
+	if err := api.ParseVideo(&v, res); err != nil {
+		h.Log.Error("Failed to parse video", zap.Error(err))
+		return types.TaskStatus_CLIENT_FAILURE
+	}
+	var discovered []*types.ItemPointer
+	for _, rel := range v.RelatedVideos {
+		cid, err := decodeVideoID(rel.ID)
+		if err != nil {
+			h.Log.Error("Discovered weird video ID", zap.Error(err), zap.String("video_id", rel.ID))
+			return types.TaskStatus_CLIENT_FAILURE
+		}
+		discovered = append(discovered, &types.ItemPointer{
+			Dst: &types.ItemLocator{
+				Collection: "yt.videos",
+				Id:         strconv.FormatInt(cid, 10),
+			},
+			Timestamp: ptypes.TimestampNow(),
+		})
+	}
+	if _, err := h.Discovery.ReportDiscovered(ctx, &types.ReportDiscoveredRequest{
+		Pointers: discovered,
+	}); err != nil {
+		h.Log.Error("Failed to report discovered", zap.Error(err))
+	} else {
+		h.Log.Info("Reported discovered", zap.Int("discovered_count", len(discovered)))
+	}
+	return types.TaskStatus_SUCCESS
 }
 
 func decodeVideoID(id string) (num int64, err error) {
