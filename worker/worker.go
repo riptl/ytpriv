@@ -40,6 +40,7 @@ func main() {
 	token := pflag.String("token", "", "Worker auth token")
 	routines := pflag.Uint("routines", 16, "Number of worker routines")
 	prefetch := pflag.Uint("prefetch", 256, "Assignment prefetch")
+	seedList := pflag.StringSlice("seed", nil, "Seed items")
 	pflag.Parse()
 	if *routines <= 0 {
 		log.Fatal("Invalid routines flag", zap.Uint("flag_routines", *routines))
@@ -75,6 +76,32 @@ func main() {
 		FillRate:      3 * time.Second,
 		StreamBackoff: backoff.WithMaxRetries(backoff.NewConstantBackOff(3 * time.Second), 16),
 		APIBackoff:    backoff.WithMaxRetries(backoff.NewConstantBackOff(2 * time.Second), 32),
+	}
+
+
+	// Push seed items.
+	seedPointers := make([]*types.ItemPointer, 0, len(*seedList))
+	for _, seed := range *seedList {
+		compact, err := decodeVideoID(seed)
+		if err != nil {
+			log.Warn("Ignoring seed ID", zap.String("video_id", seed), zap.Error(err))
+			continue
+		}
+		seedPointers = append(seedPointers, &types.ItemPointer{
+			Dst:       &types.ItemLocator{
+				Collection: "yt.videos",
+				Id:         strconv.FormatInt(compact, 10),
+			},
+			Timestamp: ptypes.TimestampNow(),
+		})
+	}
+	if len(seedPointers) > 0 {
+		if _, err := discovery.ReportDiscovered(ctx, &types.ReportDiscoveredRequest{
+			Pointers: seedPointers,
+		}); err != nil {
+			log.Fatal("Failed to push seed items")
+		}
+		log.Info("Pushed seed items")
 	}
 
 	if err := simpleWorker.Run(ctx); err != nil {
