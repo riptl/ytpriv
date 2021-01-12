@@ -76,7 +76,7 @@ func main() {
 		FillRate:      3 * time.Second,
 		ReportBatch:   128,
 		ReportRate:    3 * time.Second,
-		StreamBackoff: backoff.WithMaxRetries(backoff.NewConstantBackOff(3 * time.Second), 16),
+		StreamBackoff: backoff.NewConstantBackOff(3 * time.Second),
 		APIBackoff:    backoff.WithMaxRetries(backoff.NewConstantBackOff(2 * time.Second), 32),
 	}
 
