@@ -6,6 +6,8 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"fmt"
+	"os"
+	"os/signal"
 	"strconv"
 	"time"
 
@@ -15,7 +17,6 @@ import (
 	"github.com/terorie/ytwrk/api"
 	"github.com/terorie/ytwrk/data"
 	"github.com/valyala/fasthttp"
-	"go.od2.network/hive/pkg/appctx"
 	"go.od2.network/hive/pkg/auth"
 	"go.od2.network/hive/pkg/types"
 	"go.od2.network/hive/pkg/worker"
@@ -47,7 +48,13 @@ func main() {
 	}
 
 	// Connect to gRPC API
-	ctx := appctx.Context()
+	ctx, cancel := context.WithCancel(context.Background())
+	go func() {
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, os.Interrupt)
+		<-c
+		cancel()
+	}()
 	tlsConfig := &tls.Config{
 		MinVersion: tls.VersionTLS13,
 	}
@@ -64,6 +71,7 @@ func main() {
 	assignments := types.NewAssignmentsClient(client)
 	discovery := types.NewDiscoveryClient(client)
 	simpleWorker := &worker.Simple{
+		Collection:    "yt.videos",
 		Assignments:   assignments,
 		Log:           log.Named("worker"),
 		Handler:       &Handler{

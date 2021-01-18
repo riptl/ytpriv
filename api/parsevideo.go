@@ -48,6 +48,7 @@ func ParseVideoBody(v *data.Video, buf []byte, res *fasthttp.Response) error {
 	if err != nil {
 		return err
 	}
+	filterGarbage(root)
 
 	rootArray := root.GetArray()
 	if rootArray == nil {
@@ -375,4 +376,18 @@ func parseSetCookie(res *fasthttp.Response, field string) (cookie string, ok boo
 
 type videoData struct {
 	continuation *CommentContinuation
+}
+
+func filterGarbage(v *fastjson.Value) {
+	switch v.Type() {
+	case fastjson.TypeArray:
+		a, _ := v.Array()
+		for _, sub := range a {
+			filterGarbage(sub)
+		}
+	case fastjson.TypeObject:
+		obj, _ := v.Object()
+		obj.Del("clickTrackingParams")
+		obj.Del("trackingParams")
+	}
 }
