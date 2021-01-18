@@ -100,13 +100,13 @@ func main() {
 		if _, err := discovery.ReportDiscovered(ctx, &types.ReportDiscoveredRequest{
 			Pointers: seedPointers,
 		}); err != nil {
-			log.Fatal("Failed to push seed items")
+			log.Fatal("Failed to push seed items", zap.Error(err))
 		}
 		log.Info("Pushed seed items")
 	}
 
 	if err := simpleWorker.Run(ctx); err != nil {
-		log.Warn("Worker exited")
+		log.Warn("Worker exited", zap.Error(err))
 	}
 }
 
