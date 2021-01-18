@@ -13,6 +13,7 @@ import (
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/golang/protobuf/ptypes"
+	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	"github.com/spf13/pflag"
 	"github.com/terorie/ytwrk/api"
 	"github.com/terorie/ytwrk/data"
@@ -62,6 +63,9 @@ func main() {
 		"worker.hive.od2.network:443",
 		grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)),
 		grpc.WithPerRPCCredentials(&auth.WorkerCredentials{Token: *token}),
+		grpc.WithUnaryInterceptor(grpc_retry.UnaryClientInterceptor(
+			grpc_retry.WithMax(10),
+			grpc_retry.WithBackoff(grpc_retry.BackoffLinearWithJitter(3*time.Second, 0.8)))),
 	)
 	if err != nil {
 		log.Fatal("Failed to connect to worker API", zap.Error(err))
@@ -85,7 +89,6 @@ func main() {
 		ReportBatch:   128,
 		ReportRate:    3 * time.Second,
 		StreamBackoff: backoff.NewConstantBackOff(3 * time.Second),
-		APIBackoff:    backoff.WithMaxRetries(backoff.NewConstantBackOff(2 * time.Second), 32),
 	}
 
 	// Push seed items.
