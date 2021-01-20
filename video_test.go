@@ -35,7 +35,7 @@ func TestClient_Video(t *testing.T) {
 	assert.Equal(t, "People & Blogs", v.Genre)
 	// TODO Subtitles
 	assert.True(t, v.FamilyFriendly, "family friendly")
-	assert.Equal(t, types.VisibilityPublic, v.Visibility)
+	assert.Equal(t, types.VisibilityPublic, v.Visibility, "visibility")
 	assert.False(t, v.NoComments, "no comments")
 	assert.False(t, v.NoRatings, "no ratings")
 	assert.False(t, v.NoEmbed, "no embed")
@@ -49,8 +49,8 @@ func TestClient_Video(t *testing.T) {
 
 func TestClient_Video_Deleted(t *testing.T) {
 	v, err := NewClient().RequestVideo("chGl0_nFyqg").Do()
-	require.NoError(t, err)
-	require.NotNil(t, v)
+	assert.EqualError(t, err, "video unavailable")
+	assert.Nil(t, v)
 }
 
 // Age-restricted video test
@@ -121,18 +121,18 @@ some attacks: `
 
 // Unlisted video test
 func TestClient_Video_Unlisted(t *testing.T) {
-	v, err := NewClient().RequestVideo("RD5otQyBFqc").Do()
+	v, err := NewClient().RequestVideo("RCz83F_OGsI").Do()
 	require.NoError(t, err)
 	require.NotNil(t, v)
 
-	assert.Equal(t, "How Northern Lights Are Created", v.Title)
-	assert.Equal(t, "Love Nature", v.Uploader)
-	assert.Equal(t, "UCRZPkuHwaoKwTP3CYPdVldg", v.UploaderID)
+	assert.Equal(t, "Houdini Smoke Sim Test", v.Title)
+	assert.Equal(t, "Henry Medhurst", v.Uploader)
+	assert.Equal(t, "UCbYbnbrBh4mULa3fjfwJVgw", v.UploaderID)
 	uploadDate := time.Unix(v.Uploaded, 0)
-	assert.Equal(t, 2013, uploadDate.Year())
-	assert.Equal(t, time.February, uploadDate.Month())
-	assert.Equal(t, 11, uploadDate.Day())
-	assert.Equal(t, "Science & Technology", v.Genre)
+	assert.Equal(t, 2014, uploadDate.Year())
+	assert.Equal(t, time.April, uploadDate.Month())
+	assert.Equal(t, 8, uploadDate.Day())
+	assert.Equal(t, "Film & Animation", v.Genre)
 	assert.False(t, v.NoComments, "no comments")
 	assert.False(t, v.NoRatings, "no ratings")
 	assert.False(t, v.NoEmbed, "no embed")

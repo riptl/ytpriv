@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestGetVideoID(t *testing.T) {
+func TestExtractVideoID(t *testing.T) {
 	id := "JNhpwY5Zkzk"
 	correct := []string{
 		"https://www.youtube.com/watch?v=JNhpwY5Zkzk",
@@ -39,7 +39,7 @@ func TestGetVideoID(t *testing.T) {
 	}
 }
 
-func TestGetChannelID(t *testing.T) {
+func TestExtractChannelID(t *testing.T) {
 	correct := []string{
 		"https://www.youtube.com/channel/UCsLiV4WJfkTEHH0b9PmRklw",
 		"http://www.youtube.com/channel/UCsLiV4WJfkTEHH0b9PmRklw/",

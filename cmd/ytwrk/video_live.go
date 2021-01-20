@@ -9,13 +9,13 @@ import (
 	"github.com/terorie/ytwrk"
 )
 
-var VideoLive = cobra.Command{
+var videoLiveCmd = cobra.Command{
 	Use:   "live",
 	Short: "Get information about a livestream",
 }
 
 func init() {
-	VideoLive.AddCommand(
+	videoLiveCmd.AddCommand(
 		&videoLiveChatCmd,
 	)
 }

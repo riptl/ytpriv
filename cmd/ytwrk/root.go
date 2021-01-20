@@ -36,9 +36,9 @@ func init() {
 		"HTTP client user-agent")
 
 	Root.AddCommand(
-		&Channel,
-		&Video,
-		&Playlist,
+		&channelCmd,
+		&videoCmd,
+		&playlistCmd,
 	)
 }
 

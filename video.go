@@ -64,6 +64,7 @@ var ErrRateLimit = errors.New("reCAPTCHA triggered")
 // res is optional
 func ParseVideoBody(buf []byte, res *fasthttp.Response) (*types.Video, error) {
 	v := new(types.Video)
+	v.Visibility = types.VisibilityPublic
 	var internal *videoData
 	if res != nil {
 		internal = new(videoData)
@@ -84,7 +85,6 @@ func ParseVideoBody(buf []byte, res *fasthttp.Response) (*types.Video, error) {
 	// Get interesting objects
 	var pageResponse *fastjson.Value
 	var playerResponse *fastjson.Value
-	var playerArgs *fastjson.Value
 	var xsrfToken string
 	for _, sub := range rootArray {
 		if playerResponse == nil {
@@ -95,9 +95,6 @@ func ParseVideoBody(buf []byte, res *fasthttp.Response) (*types.Video, error) {
 		}
 		if xsrfToken == "" {
 			xsrfToken = string(sub.GetStringBytes("xsrf_token"))
-		}
-		if playerArgs == nil {
-			playerArgs = sub.Get("player", "args")
 		}
 	}
 
@@ -167,10 +164,8 @@ cookieFailed:
 	v.RelatedVideos = parseVideoRelated(watchNextResults)
 
 	// Parse player args
-	if playerArgs != nil {
-		if err := parsePlayerArgs(v, playerArgs); err != nil {
-			return nil, err
-		}
+	if err := parsePlayerArgs(v, playerResponse); err != nil {
+		return nil, err
 	}
 
 	// Get captions
@@ -305,15 +300,7 @@ func parseVideoInfo(v *types.Video, videoInfo []*fastjson.Value) error {
 	return nil
 }
 
-func parsePlayerArgs(v *types.Video, args *fastjson.Value) error {
-	newPlayerResJSON := args.GetStringBytes("player_response")
-	if len(newPlayerResJSON) == 0 {
-		return nil
-	}
-	res, err := fastjson.ParseBytes(newPlayerResJSON)
-	if err != nil {
-		return err
-	}
+func parsePlayerArgs(v *types.Video, res *fastjson.Value) error {
 	streamingData := res.Get("streamingData")
 	for _, format := range streamingData.GetArray("formats") {
 		if itag := format.GetInt("itag"); itag != 0 {

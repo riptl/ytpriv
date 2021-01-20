@@ -14,44 +14,32 @@ func main() {
 	}
 }
 
-var force bool
-
-var Channel = cobra.Command{
+var channelCmd = cobra.Command{
 	Use:   "channel",
 	Short: "Get information about a channel",
 }
 
-func init() {
-	channelDumpCmd.Flags().BoolVarP(&force, "force", "f", false, "Overwrite the output file if it already exists")
-	Channel.AddCommand(
-		&channelDumpRawCmd,
-		&channelDumpCmd,
-	)
-}
-
-var Playlist = cobra.Command{
+var playlistCmd = cobra.Command{
 	Use:   "playlist",
 	Short: "Get information about playlists",
 }
 
 func init() {
-	Playlist.AddCommand(
+	playlistCmd.AddCommand(
 		&playlistVideos,
 	)
 }
 
-var Video = cobra.Command{
+var videoCmd = cobra.Command{
 	Use:   "video",
 	Short: "Get information about a video",
 }
 
 func init() {
-	Video.AddCommand(
+	videoCmd.AddCommand(
 		&videoCommentsCmd,
 		&videoDetailCmd,
-		&videoDumpCmd,
-		&videoDumpRawCmd,
-		&videoParseRawCmd,
-		&VideoLive,
+		&videoLiveCmd,
+		&videoRawCmd,
 	)
 }
