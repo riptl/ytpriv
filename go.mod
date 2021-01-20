@@ -3,11 +3,8 @@ module github.com/terorie/ytwrk
 go 1.13
 
 require (
-	github.com/DataDog/sketches-go v0.0.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.1.0
 	github.com/golang/protobuf v1.4.3
-	github.com/google/gofuzz v1.1.0 // indirect
-	github.com/gorilla/rpc v1.2.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.0.1-0.20190118093823-f849b5445de4
 	github.com/sirupsen/logrus v1.7.0
 	github.com/spf13/cobra v1.1.1
