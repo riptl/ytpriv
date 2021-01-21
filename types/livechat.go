@@ -2,12 +2,15 @@ package types
 
 import "encoding/json"
 
-// LivechatMessage is a message in YouTube live chats.
+// LivechatMessage is a message or super chat in YouTube live chats.
 type LivechatMessage struct {
-	ID        string          `json:"id"`
-	Message   json.RawMessage `json:"message"`
-	AuthorID  string          `json:"author_id"`
-	Author    string          `json:"author"`
-	Timestamp int64           `json:"timestamp"`
-}
+	ID        string
+	Message   json.RawMessage
+	AuthorID  string
+	Author    string
+	Timestamp int64
 
+	// Super Chat specific
+	SuperChat  bool
+	PaidAmount string
+}

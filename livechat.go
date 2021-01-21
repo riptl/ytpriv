@@ -27,7 +27,7 @@ type LivechatStartRequest struct {
 	*fasthttp.Request
 }
 
-func (r LivechatStartRequest) Do() ([]types.LivechatMessage, LivechatContinuation, error) {
+func (r LivechatStartRequest) Do() ([]*types.LivechatMessage, LivechatContinuation, error) {
 	res := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(res)
 	if err := r.Client.HTTP.Do(r.Request, res); err != nil {
@@ -36,7 +36,7 @@ func (r LivechatStartRequest) Do() ([]types.LivechatMessage, LivechatContinuatio
 	return ParseLivechatStart(res)
 }
 
-func ParseLivechatStart(res *fasthttp.Response) (msgs []types.LivechatMessage, cont LivechatContinuation, err error) {
+func ParseLivechatStart(res *fasthttp.Response) (msgs []*types.LivechatMessage, cont LivechatContinuation, err error) {
 	if res.StatusCode() != fasthttp.StatusOK {
 		err = fmt.Errorf("response status %d", res.StatusCode())
 		return
@@ -61,10 +61,9 @@ func ParseLivechatStart(res *fasthttp.Response) (msgs []types.LivechatMessage, c
 		Continuation: string(continuationObj.GetStringBytes("continuation")),
 	}
 	chatMessages := liveChatRenderer.GetArray("actions")
-	msgs, err = parseLiveChatMessages(chatMessages)
+	msgs = parseLiveChatMessages(chatMessages)
 	return
 }
-
 
 // RequestLivechatContinuation fetches the continuation of a live chat.
 func (c *Client) RequestLivechatContinuation(continuation string) LivechatContinuationRequest {
@@ -82,7 +81,7 @@ type LivechatContinuationRequest struct {
 	*fasthttp.Request
 }
 
-func (r LivechatContinuationRequest) Do() ([]types.LivechatMessage, LivechatContinuation, error) {
+func (r LivechatContinuationRequest) Do() ([]*types.LivechatMessage, LivechatContinuation, error) {
 	res := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(res)
 	if err := r.Client.HTTP.Do(r.Request, res); err != nil {
@@ -91,7 +90,7 @@ func (r LivechatContinuationRequest) Do() ([]types.LivechatMessage, LivechatCont
 	return ParseLivechatPage(res)
 }
 
-func ParseLivechatPage(res *fasthttp.Response) (msgs []types.LivechatMessage, cont LivechatContinuation, err error) {
+func ParseLivechatPage(res *fasthttp.Response) (msgs []*types.LivechatMessage, cont LivechatContinuation, err error) {
 	if res.StatusCode() != fasthttp.StatusOK {
 		err = fmt.Errorf("response status %d", res.StatusCode())
 		return
@@ -116,28 +115,52 @@ func ParseLivechatPage(res *fasthttp.Response) (msgs []types.LivechatMessage, co
 		Continuation: string(continuationObj.GetStringBytes("continuation")),
 	}
 	chatMessages := liveChatRenderer.GetArray("actions")
-	msgs, err = parseLiveChatMessages(chatMessages)
+	msgs = parseLiveChatMessages(chatMessages)
 	return
 }
 
-func parseLiveChatMessages(actions []*fastjson.Value) (parsed []types.LivechatMessage, err error) {
-	for _, chatMessage := range actions {
-		messageRenderer := chatMessage.Get("addChatItemAction", "item", "liveChatTextMessageRenderer")
-		if messageRenderer == nil {
-			continue
+func parseLiveChatMessages(actions []*fastjson.Value) (parsed []*types.LivechatMessage) {
+	for _, action := range actions {
+		msg := parseLivechatMessage(action)
+		if msg != nil {
+			parsed = append(parsed, msg)
 		}
-		timestampStr := string(messageRenderer.GetStringBytes("timestampUsec"))
-		timestamp, _ := strconv.ParseInt(timestampStr, 10, 64)
-		id, _ := url.QueryUnescape(string(messageRenderer.GetStringBytes("id")))
-		parsed = append(parsed, types.LivechatMessage{
-			ID:        id,
-			Message:   messageRenderer.Get("message", "runs").MarshalTo(nil),
-			AuthorID:  string(messageRenderer.GetStringBytes("authorExternalChannelId")),
-			Author:    string(messageRenderer.GetStringBytes("authorName", "simpleText")),
-			Timestamp: timestamp,
-		})
 	}
 	return
+}
+
+func parseLivechatMessage(action *fastjson.Value) *types.LivechatMessage {
+	// A normal chat message.
+	chatMsg := action.Get("addChatItemAction", "item", "liveChatTextMessageRenderer")
+	if chatMsg != nil {
+		timestampStr := string(chatMsg.GetStringBytes("timestampUsec"))
+		timestamp, _ := strconv.ParseInt(timestampStr, 10, 64)
+		id, _ := url.QueryUnescape(string(chatMsg.GetStringBytes("id")))
+		return &types.LivechatMessage{
+			ID:        id,
+			Message:   chatMsg.Get("message", "runs").MarshalTo(nil),
+			AuthorID:  string(chatMsg.GetStringBytes("authorExternalChannelId")),
+			Author:    string(chatMsg.GetStringBytes("authorName", "simpleText")),
+			Timestamp: timestamp,
+		}
+	}
+	// A paid/super-chat message.
+	paidMsg := action.Get("addChatItemAction", "item", "liveChatPaidMessageRenderer")
+	if paidMsg != nil {
+		timestampStr := string(paidMsg.GetStringBytes("timestampUsec"))
+		timestamp, _ := strconv.ParseInt(timestampStr, 10, 64)
+		id, _ := url.QueryUnescape(string(paidMsg.GetStringBytes("id")))
+		return &types.LivechatMessage{
+			ID:         id,
+			Message:    paidMsg.Get("message", "runs").MarshalTo(nil),
+			AuthorID:   string(paidMsg.GetStringBytes("authorExternalChannelId")),
+			Author:     string(paidMsg.GetStringBytes("authorName", "simpleText")),
+			Timestamp:  timestamp,
+			SuperChat:  true,
+			PaidAmount: string(paidMsg.GetStringBytes("purchaseAmountText", "simpleText")),
+		}
+	}
+	return nil
 }
 
 type LivechatContinuation struct {
