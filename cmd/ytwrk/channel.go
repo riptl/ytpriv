@@ -11,6 +11,15 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
+var channelCmd = cobra.Command{
+	Use:   "channel",
+	Short: "Scrape a channel",
+}
+
+func init() {
+	rootCmd.AddCommand(&channelCmd)
+}
+
 var channelOverviewCmd = cobra.Command{
 	Use: "overview <channel>",
 	Short: "Get overview of channel",

@@ -10,6 +10,15 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
+var videoCmd = cobra.Command{
+	Use:   "video",
+	Short: "Scrape a video",
+}
+
+func init() {
+	rootCmd.AddCommand(&videoCmd)
+}
+
 var videoDetailCmd = cobra.Command{
 	Use:   "detail <video>",
 	Short: "Get details about a video",

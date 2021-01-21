@@ -9,26 +9,27 @@ import (
 	"github.com/terorie/ytwrk"
 )
 
-var videoLiveCmd = cobra.Command{
-	Use:   "live",
-	Short: "Get information about a livestream",
+var livestreamCmd = cobra.Command{
+	Use:   "livestream",
+	Short: "Scrape a livestream",
 }
 
 func init() {
-	videoLiveCmd.AddCommand(
-		&videoLiveChatCmd,
-	)
-	videoCmd.AddCommand(&videoLiveCmd)
+	rootCmd.AddCommand(&livestreamCmd)
 }
 
-var videoLiveChatCmd = cobra.Command{
+var livestreamChat = cobra.Command{
 	Use:   "chat",
 	Short: "Follow the live chat",
 	Args:  cobra.ExactArgs(1),
-	Run:   cmdFunc(doVideoLiveChat),
+	Run:   cmdFunc(doLivestreamChat),
 }
 
-func doVideoLiveChat(_ *cobra.Command, args []string) error {
+func init() {
+	livestreamCmd.AddCommand(&livestreamChat)
+}
+
+func doLivestreamChat(_ *cobra.Command, args []string) error {
 	videoID := args[0]
 	videoID, err := yt.ExtractVideoID(videoID)
 	if err != nil {

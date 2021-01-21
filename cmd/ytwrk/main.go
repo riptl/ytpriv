@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	if err := root.Execute(); err != nil {
+	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
@@ -22,7 +22,7 @@ const version = "v1.0.0"
 var concurrentRequests uint
 var logLevel string
 
-var root = cobra.Command{
+var rootCmd = cobra.Command{
 	Use:              "ytwrk",
 	Short:            "ytwrk is a YouTube metadata exporter",
 	Long:             "https://github.com/terorie/ytwrk",
@@ -30,7 +30,7 @@ var root = cobra.Command{
 }
 
 func init() {
-	pf := root.PersistentFlags()
+	pf := rootCmd.PersistentFlags()
 	pf.UintVarP(&concurrentRequests, "concurrency", "c", 4,
 		"Number of maximum concurrent HTTP requests")
 	pf.StringVarP(&logLevel, "log-level", "l", "",
@@ -38,12 +38,6 @@ func init() {
 			"{debug, info, warn, error, fatal, panic}")
 	pf.StringVar(&client.HTTP.Name, "user-agent", "ytwrk/"+version,
 		"HTTP client user-agent")
-
-	root.AddCommand(
-		&channelCmd,
-		&videoCmd,
-		&playlistCmd,
-	)
 }
 
 func rootPreRun(_ *cobra.Command, _ []string) {
@@ -82,25 +76,4 @@ var client = yt.Client{
 		DisableHeaderNamesNormalizing: true,
 		MaxConnsPerHost:               50,
 	},
-}
-
-var channelCmd = cobra.Command{
-	Use:   "channel",
-	Short: "Get information about a channel",
-}
-
-var playlistCmd = cobra.Command{
-	Use:   "playlist",
-	Short: "Get information about playlists",
-}
-
-func init() {
-	playlistCmd.AddCommand(
-		&playlistVideos,
-	)
-}
-
-var videoCmd = cobra.Command{
-	Use:   "video",
-	Short: "Get information about a video",
 }

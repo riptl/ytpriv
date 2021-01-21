@@ -9,11 +9,24 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
+var playlistCmd = cobra.Command{
+	Use:   "playlist",
+	Short: "Scrape a playlist",
+}
+
+func init() {
+	rootCmd.AddCommand(&playlistCmd)
+}
+
 var playlistVideos = cobra.Command{
 	Use:   "videos <playlist ID>",
 	Short: "Get full list of videos in playlist",
 	Args:  cobra.ExactArgs(1),
 	Run:   cmdFunc(doPlaylistVideos),
+}
+
+func init() {
+	playlistCmd.AddCommand(&playlistVideos)
 }
 
 func doPlaylistVideos(_ *cobra.Command, args []string) error {
