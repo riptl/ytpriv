@@ -1,6 +1,6 @@
 # ytwrk 💾
 
-A fast tool for exporting YouTube data, using YouTube's undocumented JSON APIs.
+A fast tool for exporting YouTube data using their undocumented JSON APIs.
 
 No API keys or logins required, and no stability guarantees given.
 
