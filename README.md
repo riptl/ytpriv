@@ -47,3 +47,14 @@ ytwrk video [command]
   comments    Scrape comments of videos
   detail      Get details about a video
 ```
+
+## Attributions
+
+Developed by [@terorie](https://github.com/terorie)
+
+Using the amazing Go ecosystem including:
+- [fasthttp](https://pkg.go.dev/github.com/valyala/fasthttp) and [fastjson](github.com/valyala/fastjson) for fast networking
+- [testify](https://pkg.go.dev/github.com/stretchr/testify) regression test helpers
+- [cobra](https://pkg.go.dev/github.com/spf13/cobra) for CLI
+- [backoff](https://pkg.go.dev/github.com/cenkalti/backoff/v4) for retries
+- [zap](https://pkg.go.dev/go.uber.org/zap) logging
