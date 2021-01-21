@@ -12,7 +12,8 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/valyala/fasthttp v1.19.0
 	github.com/valyala/fastjson v1.6.3
-	go.od2.network/hive v0.0.2-0.20210120131530-05e0edcb4f4e
+	go.od2.network/hive-api v0.0.2
+	go.od2.network/hive-worker v0.0.2
 	go.uber.org/zap v1.16.0
 	google.golang.org/grpc v1.35.0
 )

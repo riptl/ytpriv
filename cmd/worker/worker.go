@@ -16,9 +16,8 @@ import (
 	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	"github.com/spf13/pflag"
 	yt "github.com/terorie/ytwrk"
-	"go.od2.network/hive/pkg/auth"
-	"go.od2.network/hive/pkg/types"
-	"go.od2.network/hive/pkg/worker"
+	"go.od2.network/hive-api"
+	"go.od2.network/hive-worker"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"google.golang.org/grpc"
@@ -61,7 +60,7 @@ func main() {
 	client, err := grpc.Dial(
 		"worker.hive.od2.network:443",
 		grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)),
-		grpc.WithPerRPCCredentials(&auth.WorkerCredentials{Token: *token}),
+		grpc.WithPerRPCCredentials(&hive.WorkerCredentials{Token: *token}),
 		grpc.WithUnaryInterceptor(grpc_retry.UnaryClientInterceptor(
 			grpc_retry.WithMax(10),
 			grpc_retry.WithBackoff(grpc_retry.BackoffLinearWithJitter(3*time.Second, 0.8)))),
@@ -72,8 +71,8 @@ func main() {
 	}
 
 	// Construct worker
-	assignments := types.NewAssignmentsClient(client)
-	discovery := types.NewDiscoveryClient(client)
+	assignments := hive.NewAssignmentsClient(client)
+	discovery := hive.NewDiscoveryClient(client)
 	simpleWorker := &worker.Simple{
 		Collection:    "yt.videos",
 		Assignments:   assignments,
@@ -92,15 +91,15 @@ func main() {
 	}
 
 	// Push seed items.
-	seedPointers := make([]*types.ItemPointer, 0, len(*seedList))
+	seedPointers := make([]*hive.ItemPointer, 0, len(*seedList))
 	for _, seed := range *seedList {
 		compact, err := decodeVideoID(seed)
 		if err != nil {
 			log.Warn("Ignoring seed ID", zap.String("video_id", seed), zap.Error(err))
 			continue
 		}
-		seedPointers = append(seedPointers, &types.ItemPointer{
-			Dst:       &types.ItemLocator{
+		seedPointers = append(seedPointers, &hive.ItemPointer{
+			Dst:       &hive.ItemLocator{
 				Collection: "yt.videos",
 				Id:         strconv.FormatInt(compact, 10),
 			},
@@ -108,7 +107,7 @@ func main() {
 		})
 	}
 	if len(seedPointers) > 0 {
-		if _, err := discovery.ReportDiscovered(ctx, &types.ReportDiscoveredRequest{
+		if _, err := discovery.ReportDiscovered(ctx, &hive.ReportDiscoveredRequest{
 			Pointers: seedPointers,
 		}); err != nil {
 			log.Fatal("Failed to push seed items", zap.Error(err))
@@ -125,11 +124,11 @@ func main() {
 type Handler struct {
 	Client    *yt.Client
 	Log       *zap.Logger
-	Discovery types.DiscoveryClient
+	Discovery hive.DiscoveryClient
 }
 
 // WorkAssignment processes a single video.
-func (h *Handler) WorkAssignment(ctx context.Context, assign *types.Assignment) types.TaskStatus {
+func (h *Handler) WorkAssignment(ctx context.Context, assign *hive.Assignment) hive.TaskStatus {
 	compactID, err := strconv.ParseInt(assign.Locator.Id, 10, 64)
 	if err != nil {
 		panic(err)
@@ -143,31 +142,31 @@ func (h *Handler) WorkAssignment(ctx context.Context, assign *types.Assignment) 
 	v, err := h.Client.RequestVideo(videoID).Do()
 	if err != nil {
 		h.Log.Error("Failed to parse video", zap.Error(err))
-		return types.TaskStatus_CLIENT_FAILURE
+		return hive.TaskStatus_CLIENT_FAILURE
 	}
-	var discovered []*types.ItemPointer
+	var discovered []*hive.ItemPointer
 	for _, rel := range v.RelatedVideos {
 		cid, err := decodeVideoID(rel.ID)
 		if err != nil {
 			h.Log.Error("Discovered weird video ID", zap.Error(err), zap.String("video_id", rel.ID))
-			return types.TaskStatus_CLIENT_FAILURE
+			return hive.TaskStatus_CLIENT_FAILURE
 		}
-		discovered = append(discovered, &types.ItemPointer{
-			Dst: &types.ItemLocator{
+		discovered = append(discovered, &hive.ItemPointer{
+			Dst: &hive.ItemLocator{
 				Collection: "yt.videos",
 				Id:         strconv.FormatInt(cid, 10),
 			},
 			Timestamp: ptypes.TimestampNow(),
 		})
 	}
-	if _, err := h.Discovery.ReportDiscovered(ctx, &types.ReportDiscoveredRequest{
+	if _, err := h.Discovery.ReportDiscovered(ctx, &hive.ReportDiscoveredRequest{
 		Pointers: discovered,
 	}); err != nil {
 		h.Log.Error("Failed to report discovered", zap.Error(err))
 	} else {
 		h.Log.Info("Reported discovered", zap.Int("discovered_count", len(discovered)))
 	}
-	return types.TaskStatus_SUCCESS
+	return hive.TaskStatus_SUCCESS
 }
 
 func decodeVideoID(id string) (num int64, err error) {
