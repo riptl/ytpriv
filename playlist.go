@@ -86,11 +86,14 @@ func ParsePlaylist(res *fasthttp.Response) (*types.Playlist, error) {
 	for _, wrapper := range contents {
 		renderer := wrapper.Get("playlistVideoRenderer")
 		channel := renderer.Get("shortBylineText", "runs", "0")
+		firstThumbnail := string(renderer.GetStringBytes("thumbnail", "thumbnails", "0", "url"))
+		unavailable := firstThumbnail == "https://i.ytimg.com/img/no_thumbnail.jpg"
 		video := types.VideoItem{
 			ID:          string(renderer.GetStringBytes("videoId")),
 			Title:       string(renderer.GetStringBytes("title", "runs", "0", "text")),
 			ChannelID:   string(channel.GetStringBytes("navigationEndpoint", "browseEndpoint", "browseId")),
 			ChannelName: string(channel.GetStringBytes("text")),
+			Unavailable: unavailable,
 		}
 		if video.ID != "" {
 			l.Page.Videos = append(l.Page.Videos, video)

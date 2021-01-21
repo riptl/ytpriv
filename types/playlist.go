@@ -16,7 +16,7 @@ type PlaylistPage struct {
 type VideoItem struct {
 	ID          string
 	Title       string
-	ChannelID   string
-	ChannelName string
-	Unavailable bool `json:",omitempty"`
+	ChannelID   string `json:",omitempty"`
+	ChannelName string `json:",omitempty"`
+	Unavailable bool   `json:",omitempty"`
 }
