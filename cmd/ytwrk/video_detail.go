@@ -3,9 +3,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
 	yt "github.com/terorie/ytwrk"
+	"github.com/valyala/fasthttp"
 )
 
 var videoDetailCmd = cobra.Command{
@@ -15,21 +17,42 @@ var videoDetailCmd = cobra.Command{
 	Run:   cmdFunc(doVideoDetail),
 }
 
-func doVideoDetail(_ *cobra.Command, args []string) error {
+func init() {
+	flags := videoDetailCmd.Flags()
+	flags.Bool("raw", false, "Dump raw JSON")
+
+	videoCmd.AddCommand(&videoDetailCmd)
+}
+
+func doVideoDetail(c *cobra.Command, args []string) error {
 	videoID := args[0]
 	videoID, err := yt.ExtractVideoID(videoID)
 	if err != nil {
 		return err
 	}
-	video, err := client.RequestVideo(videoID).Do()
+	req := client.RequestVideo(videoID)
+	raw, err := c.Flags().GetBool("raw")
 	if err != nil {
-		return err
+		panic(err)
 	}
-	bytesMain, err := json.MarshalIndent(video, "", "\t")
-	if err != nil {
-		return err
+	if !raw {
+		video, err := req.Do()
+		if err != nil {
+			return err
+		}
+		bytesMain, err := json.MarshalIndent(video, "", "\t")
+		if err != nil {
+			return err
+		}
+		fmt.Println(string(bytesMain))
+		fmt.Println()
+	} else {
+		res := fasthttp.AcquireResponse()
+		defer fasthttp.ReleaseResponse(res)
+		if err := client.HTTP.Do(req.Request, res); err != nil {
+			return err
+		}
+		return res.BodyWriteTo(os.Stdout)
 	}
-	fmt.Println(string(bytesMain))
-	fmt.Println()
 	return nil
 }

@@ -18,6 +18,7 @@ func init() {
 	videoLiveCmd.AddCommand(
 		&videoLiveChatCmd,
 	)
+	videoCmd.AddCommand(&videoLiveCmd)
 }
 
 var videoLiveChatCmd = cobra.Command{

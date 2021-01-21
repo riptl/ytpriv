@@ -151,7 +151,7 @@ var Formats = []Format{
 }
 
 func (f FormatType) MarshalJSON() ([]byte, error) {
-	flags := make([]string, 0)
+	var flags []string
 	setFlag := func(mask FormatType, name string) {
 		if f&mask != 0 {
 			flags = append(flags, name)

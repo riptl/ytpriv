@@ -26,6 +26,8 @@ func init() {
 	f := videoCommentsCmd.Flags()
 	f.Duration("slow-start", time.Second, "Time to wait between opening connections")
 	f.String("sort", "new", "Comment sort order (new, top)")
+
+	videoCmd.AddCommand(&videoCommentsCmd)
 }
 
 func doVideoComments(c *cobra.Command, args []string) error {
