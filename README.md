@@ -19,8 +19,8 @@ Please only use this tool to the extent permitted by the [YouTube ToS](https://w
 ### Playlist
 
 ```
-  videos      Dump the video IDs in a playlist
-  videos_page Get page of videos of channel
+  videos      Get full list of videos in playlist
+  videos_page Get page of videos of playlist
 ```
 
 ### Video

@@ -11,26 +11,47 @@ import (
 
 var playlistVideos = cobra.Command{
 	Use:   "videos <playlist ID>",
-	Short: "Dump the video IDs in a playlist",
+	Short: "Get full list of videos in playlist",
 	Args:  cobra.ExactArgs(1),
-	Run:   cmdFunc(playlistVideosCmd),
+	Run:   cmdFunc(doPlaylistVideos),
 }
 
-func playlistVideosCmd(_ *cobra.Command, args []string) error {
-	id := args[0]
-	playlist, err := client.RequestPlaylistStart(id).Do()
+func doPlaylistVideos(_ *cobra.Command, args []string) error {
+	playlistID := args[0]
+	// TODO Extract ID if video or playlist URL
+	startPage, err := client.RequestPlaylistStart(playlistID).Do()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get page 0: %w", err)
 	}
-	for _, video := range playlist.Page.Videos {
-		fmt.Println(video.ID)
+	page := &startPage.Page
+	for _, video := range page.Videos {
+		res, err := json.Marshal(video)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println(string(res))
+	}
+	pageNum := 1
+	for page.Continuation != "" {
+		page, err = client.RequestPlaylistPage(page.Continuation).Do()
+		if err != nil {
+			return fmt.Errorf("failed to get page %d: %w", pageNum, err)
+		}
+		for _, video := range page.Videos {
+			res, err := json.Marshal(video)
+			if err != nil {
+				panic(err)
+			}
+			fmt.Println(string(res))
+		}
+		pageNum++
 	}
 	return nil
 }
 
 var playlistVideosPageCmd = cobra.Command{
 	Use: "videos_page <playlist ID or continuation>",
-	Short: "Get page of videos of channel",
+	Short: "Get page of videos of playlist",
 	Args: cobra.ExactArgs(1),
 	Run: cmdFunc(doPlaylistVideosPage),
 }
