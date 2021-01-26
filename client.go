@@ -16,7 +16,7 @@ type Client struct {
 
 func NewClient() *Client {
 	return &Client{HTTP: &fasthttp.Client{
-		Name:         "ytwrk/testing",
+		Name:         "ytpriv/testing",
 		ReadTimeout:  2 * time.Second,
 		WriteTimeout: 2 * time.Second,
 	}}

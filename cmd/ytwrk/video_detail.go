@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	yt "github.com/terorie/ytwrk"
+	yt "github.com/terorie/ytpriv"
 	"github.com/valyala/fasthttp"
 )
 

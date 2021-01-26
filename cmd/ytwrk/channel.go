@@ -6,8 +6,8 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	yt "github.com/terorie/ytwrk"
-	"github.com/terorie/ytwrk/types"
+	yt "github.com/terorie/ytpriv"
+	"github.com/terorie/ytpriv/types"
 	"github.com/valyala/fasthttp"
 )
 

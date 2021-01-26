@@ -1,4 +1,4 @@
-# ytwrk 💾
+# ytpriv 💾
 
 A fast tool for exporting YouTube data using their undocumented JSON APIs.
 
@@ -9,7 +9,7 @@ Please only use this tool to the extent permitted by the [YouTube ToS](https://w
 ## Features
 
 ```
-ytwrk [command]
+ytpriv [command]
   channel     Scrape a channel
   livestream  Scrape a livestream
   playlist    Scrape a playlist
@@ -19,7 +19,7 @@ ytwrk [command]
 ### Channel
 
 ```
-ytwrk channel [command]
+ytpriv channel [command]
   overview    Get overview of channel
   videos      Get full list of videos of channel
   videos_page Get videos page of channel
@@ -28,14 +28,14 @@ ytwrk channel [command]
 ### Livestream
 
 ```
-ytwrk livestream [command]
+ytpriv livestream [command]
   chat        Follow the live chat
 ```
 
 ### Playlist
 
 ```
-ytwrk playlist [command]
+ytpriv playlist [command]
   videos      Get full list of videos in playlist
   videos_page Get page of videos of playlist
 ```
@@ -43,7 +43,7 @@ ytwrk playlist [command]
 ### Video
 
 ```
-ytwrk video [command]
+ytpriv video [command]
   comments    Scrape comments of videos
   detail      Get details about a video
 ```

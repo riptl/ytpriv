@@ -9,8 +9,8 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	yt "github.com/terorie/ytwrk"
-	"github.com/terorie/ytwrk/types"
+	yt "github.com/terorie/ytpriv"
+	"github.com/terorie/ytpriv/types"
 )
 
 var continuationLimitReached = fmt.Errorf("continuation limit reached")

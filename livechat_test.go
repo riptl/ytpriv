@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/terorie/ytwrk/types"
+	"github.com/terorie/ytpriv/types"
 	"github.com/valyala/fastjson"
 )
 

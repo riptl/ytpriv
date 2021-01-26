@@ -15,7 +15,7 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	"github.com/spf13/pflag"
-	yt "github.com/terorie/ytwrk"
+	yt "github.com/terorie/ytpriv"
 	"go.od2.network/hive-api"
 	"go.od2.network/hive-worker"
 	"go.uber.org/zap"

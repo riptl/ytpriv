@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/terorie/ytwrk/types"
+	"github.com/terorie/ytpriv/types"
 	"github.com/valyala/fasthttp"
 	"github.com/valyala/fastjson"
 )

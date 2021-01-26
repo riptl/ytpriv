@@ -1,4 +1,4 @@
-module github.com/terorie/ytwrk
+module github.com/terorie/ytpriv
 
 go 1.13
 

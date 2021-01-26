@@ -6,7 +6,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	yt "github.com/terorie/ytwrk"
+	yt "github.com/terorie/ytpriv"
 	"github.com/valyala/fasthttp"
 )
 
@@ -23,9 +23,9 @@ var concurrentRequests uint
 var logLevel string
 
 var rootCmd = cobra.Command{
-	Use:              "ytwrk",
-	Short:            "ytwrk is a YouTube metadata exporter",
-	Long:             "https://github.com/terorie/ytwrk",
+	Use:              "ytpriv",
+	Short:            "ytpriv is a YouTube metadata exporter",
+	Long:             "https://github.com/terorie/ytpriv",
 	PersistentPreRun: rootPreRun,
 }
 
@@ -36,7 +36,7 @@ func init() {
 	pf.StringVarP(&logLevel, "log-level", "l", "",
 		"Log level. Valid options are:\n"+
 			"{debug, info, warn, error, fatal, panic}")
-	pf.StringVar(&client.HTTP.Name, "user-agent", "ytwrk/"+version,
+	pf.StringVar(&client.HTTP.Name, "user-agent", "ytpriv/"+version,
 		"HTTP client user-agent")
 }
 
@@ -49,8 +49,8 @@ func rootPreRun(_ *cobra.Command, _ []string) {
 		logrus.Warn("This is highly discouraged and will likely result in automated permanent IP bans.")
 		logrus.Warn("Abusing any service with high request rates forces the operators to implement rate limits")
 		logrus.Warn("and fingerprinting bans, hurting tools like this and everyone else relying on those services.")
-		if _, err := os.Stat("/tmp/ytwrk_high_rate"); os.IsNotExist(err) {
-			logrus.Warn("If you know what you are doing, touch /tmp/ytwrk_high_rate")
+		if _, err := os.Stat("/tmp/ytpriv_high_rate"); os.IsNotExist(err) {
+			logrus.Warn("If you know what you are doing, touch /tmp/ytpriv_high_rate")
 			logrus.Fatal("Terminating.")
 		}
 	}
@@ -72,7 +72,7 @@ var maxWorkers uint
 
 var client = yt.Client{
 	HTTP: &fasthttp.Client{
-		Name:                          "ytwrk/v0.4",
+		Name:                          "ytpriv/v0.4",
 		DisableHeaderNamesNormalizing: true,
 		MaxConnsPerHost:               50,
 	},

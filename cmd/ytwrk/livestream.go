@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/terorie/ytwrk"
+	"github.com/terorie/ytpriv"
 )
 
 var livestreamCmd = cobra.Command{
