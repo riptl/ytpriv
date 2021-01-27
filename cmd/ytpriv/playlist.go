@@ -63,10 +63,10 @@ func doPlaylistVideos(_ *cobra.Command, args []string) error {
 }
 
 var playlistVideosPageCmd = cobra.Command{
-	Use: "videos_page <playlist ID or continuation>",
+	Use:   "videos_page <playlist ID or continuation>",
 	Short: "Get page of videos of playlist",
-	Args: cobra.ExactArgs(1),
-	Run: cmdFunc(doPlaylistVideosPage),
+	Args:  cobra.ExactArgs(1),
+	Run:   cmdFunc(doPlaylistVideosPage),
 }
 
 func init() {

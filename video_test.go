@@ -140,4 +140,3 @@ func TestClient_Video_Unlisted(t *testing.T) {
 	assert.NotZero(t, v.Views, "views")
 	assert.EqualValues(t, types.VisibilityUnlisted, v.Visibility, "visibility")
 }
-

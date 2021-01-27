@@ -12,5 +12,5 @@ type LivechatMessage struct {
 
 	// Super Chat specific
 	SuperChat  bool
-	PaidAmount string
+	PaidAmount string `json:",omitempty"`
 }

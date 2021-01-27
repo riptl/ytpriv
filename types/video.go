@@ -20,6 +20,12 @@ type Video struct {
 	FamilyFriendly bool
 	Livestream     *Livestream `json:",omitempty"`
 
+	// Continuations
+	TopChatContinuation        string `json:",omitempty"`
+	LiveChatContinuation       string `json:",omitempty"`
+	TopChatReplayContinuation  string `json:",omitempty"`
+	LiveChatReplayContinuation string `json:",omitempty"`
+
 	// Privacy settings
 	Visibility       VisibilitySetting
 	NoComments       bool `json:",omitempty"`

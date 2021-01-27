@@ -8,6 +8,7 @@ import (
 
 var durationErr = errors.New("unknown duration code")
 
+// ExtractNumber extracts an integer from a locale-formatted string.
 // "137,802 views" => 137802
 func ExtractNumber(s string) (uint64, error) {
 	// Extract numbers from view string
@@ -21,6 +22,7 @@ func ExtractNumber(s string) (uint64, error) {
 	return strconv.ParseUint(string(clean), 10, 64)
 }
 
+// ParseDuration parses a duration string.
 // "PT6M57S" => 6 min 57 s
 func ParseDuration(d string) (uint64, error) {
 	if d[0:2] != "PT" {

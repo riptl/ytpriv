@@ -51,7 +51,7 @@ func init() {
 	}
 }
 
-// Taken from github.com/rg3/youtube-dl
+// Formats from github.com/rg3/youtube-dl
 // As in youtube_dl/extractor/youtube.py
 var Formats = []Format{
 	// Standard formats

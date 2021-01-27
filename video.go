@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -50,18 +49,14 @@ func ParseVideo(res *fasthttp.Response) (*types.Video, error) {
 	case bytes.HasPrefix(contentType, []byte("application/json")):
 		break
 	case bytes.HasPrefix(contentType, []byte("text/html")):
-		return nil,
-		ErrRateLimit
+		return nil,  ErrRateLimit
 	}
 	return ParseVideoBody(res.Body(), res)
 }
 
-var matchThumbUrl = regexp.MustCompile("^.+/hqdefault\\.jpg")
-
 var unexpectedType = errors.New("unexpected type")
 var ErrRateLimit = errors.New("reCAPTCHA triggered")
 
-// res is optional
 func ParseVideoBody(buf []byte, res *fasthttp.Response) (*types.Video, error) {
 	v := new(types.Video)
 	v.Visibility = types.VisibilityPublic
@@ -139,6 +134,22 @@ func ParseVideoBody(buf []byte, res *fasthttp.Response) (*types.Video, error) {
 	watchNextContents := watchNextResults.GetArray("results", "results", "contents")
 	if err := parseVideoInfo(v, watchNextContents); err != nil {
 		return nil, err
+	}
+
+	// Parse live chat replay continuations
+	livechatReplayItems := watchNextResults.GetArray("conversationBar", "liveChatRenderer", "header", "liveChatHeaderRenderer", "viewSelector", "sortFilterSubMenuRenderer", "subMenuItems")
+	for _, item := range livechatReplayItems {
+		continuation := string(item.GetStringBytes("continuation", "reloadContinuationData", "continuation"))
+		switch strings.ToLower(string(item.GetStringBytes("title"))) {
+		case "top chat":
+			v.TopChatContinuation = continuation
+		case "live chat":
+			v.LiveChatContinuation = continuation
+		case "top chat replay":
+			v.TopChatReplayContinuation = continuation
+		case "live chat replay":
+			v.LiveChatReplayContinuation = continuation
+		}
 	}
 
 	if res != nil {

@@ -17,7 +17,7 @@ import (
 func (c *Client) RequestPlaylistStart(id string) PlaylistStartRequest {
 	const playlistURL = "https://www.youtube.com/playlist?pbj=1&list="
 	req := fasthttp.AcquireRequest()
-	req.Header.SetMethod("GET")
+	req.Header.SetMethod(fasthttp.MethodGet)
 	req.SetRequestURI(playlistURL + url.QueryEscape(id))
 	setHeaders(&req.Header)
 	return PlaylistStartRequest{c, req}
@@ -109,7 +109,7 @@ func ParsePlaylist(res *fasthttp.Response) (*types.Playlist, error) {
 func (c *Client) RequestPlaylistPage(id string) PlaylistPageRequest {
 	const uri = "https://www.youtube.com/youtubei/v1/browse?key=AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8"
 	req := fasthttp.AcquireRequest()
-	req.Header.SetMethod("POST")
+	req.Header.SetMethod(fasthttp.MethodPost)
 	req.Header.SetContentType("application/json")
 	setHeaders(&req.Header)
 	req.SetRequestURI(uri)

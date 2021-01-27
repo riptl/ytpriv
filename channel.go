@@ -13,7 +13,7 @@ import (
 func (c *Client) RequestChannelOverview(channelID string) ChannelOverviewRequest {
 	const uri = "https://www.youtube.com/youtubei/v1/browse?key=AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8"
 	req := fasthttp.AcquireRequest()
-	req.Header.SetMethod("POST")
+	req.Header.SetMethod(fasthttp.MethodPost)
 	req.Header.SetContentType("application/json")
 	setHeaders(&req.Header)
 	req.SetRequestURI(uri)
@@ -76,11 +76,11 @@ func ParseChannelOverview(res *fasthttp.Response) (*types.ChannelOverview, error
 func parseLink(overview *types.ChannelOverview, v *fastjson.Value) {
 	kind := string(v.GetStringBytes("title", "simpleText"))
 	endpoint := string(v.GetStringBytes("navigationEndpoint", "urlEndpoint", "url"))
-	endpointUri, err := url.Parse(endpoint)
+	endpointURI, err := url.Parse(endpoint)
 	if err != nil {
 		return
 	}
-	link := endpointUri.Query().Get("q")
+	link := endpointURI.Query().Get("q")
 	if link == "" {
 		return
 	}
@@ -103,7 +103,7 @@ func parseLink(overview *types.ChannelOverview, v *fastjson.Value) {
 func (c *Client) RequestChannelVideosStart(channelID string) ChannelVideosStartRequest {
 	const uri = "https://www.youtube.com/youtubei/v1/browse?key=AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8"
 	req := fasthttp.AcquireRequest()
-	req.Header.SetMethod("POST")
+	req.Header.SetMethod(fasthttp.MethodPost)
 	req.Header.SetContentType("application/json")
 	setHeaders(&req.Header)
 	req.SetRequestURI(uri)

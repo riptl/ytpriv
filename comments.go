@@ -16,7 +16,7 @@ import (
 func (c *Client) RequestCommentPage(continuation *types.CommentContinuation) CommentPageRequest {
 	const commentURL = "https://www.youtube.com/comment_service_ajax?action_get_comments=1&pbj=1&ctoken=%[1]s&continuation=%[1]s"
 	req := fasthttp.AcquireRequest()
-	req.Header.SetMethod("POST")
+	req.Header.SetMethod(fasthttp.MethodPost)
 	req.Header.Set("Cookie", continuation.Cookie)
 	req.SetRequestURI(fmt.Sprintf(commentURL, continuation.Token))
 	req.SetBodyString("session_token=" + continuation.XSRF)

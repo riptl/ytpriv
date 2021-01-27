@@ -4,7 +4,17 @@ A fast tool for exporting YouTube data using their undocumented JSON APIs.
 
 No API keys or logins required, and no stability guarantees given.
 
+If you find it useful, please give it a star!
+
 Please only use this tool to the extent permitted by the [YouTube ToS](https://www.youtube.com/static?template=terms).
+
+## Installation
+
+### From source
+
+Requires a Go 1.14+ toolchain.
+
+Run `go install ./cmd/ytpriv` to install to `$(go env GOPATH)/bin/ytpriv`.
 
 ## Features
 

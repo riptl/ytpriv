@@ -21,10 +21,10 @@ func init() {
 }
 
 var channelOverviewCmd = cobra.Command{
-	Use: "overview <channel>",
+	Use:   "overview <channel>",
 	Short: "Get overview of channel",
-	Args: cobra.ExactArgs(1),
-	Run: cmdFunc(doChannelOverview),
+	Args:  cobra.ExactArgs(1),
+	Run:   cmdFunc(doChannelOverview),
 }
 
 func init() {
@@ -68,10 +68,10 @@ func doChannelOverview(c *cobra.Command, args []string) error {
 }
 
 var channelVideosCmd = cobra.Command{
-	Use: "videos <channel ID>",
+	Use:   "videos <channel ID>",
 	Short: "Get full list of videos of channel",
-	Args: cobra.ExactArgs(1),
-	Run: cmdFunc(doChannelVideos),
+	Args:  cobra.ExactArgs(1),
+	Run:   cmdFunc(doChannelVideos),
 }
 
 func init() {
@@ -134,7 +134,7 @@ func doChannelVideosPage(c *cobra.Command, args []string) error {
 		panic(err)
 	}
 	// TODO This is a bit ugly
-	var req interface{
+	var req interface {
 		Do() (*types.ChannelVideosPage, error)
 		GetRequest() *fasthttp.Request
 	}

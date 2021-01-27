@@ -10,8 +10,3 @@
 
 # Created files
 debug.txt
-
-# Config
-!/example.yml
-*.yaml
-*.yml

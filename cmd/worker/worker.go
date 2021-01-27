@@ -74,10 +74,10 @@ func main() {
 	assignments := hive.NewAssignmentsClient(client)
 	discovery := hive.NewDiscoveryClient(client)
 	simpleWorker := &worker.Simple{
-		Collection:    "yt.videos",
-		Assignments:   assignments,
-		Log:           log.Named("worker"),
-		Handler:       &Handler{
+		Collection:  "yt.videos",
+		Assignments: assignments,
+		Log:         log.Named("worker"),
+		Handler: &Handler{
 			Log:       log.Named("handler"),
 			Discovery: discovery,
 		},
@@ -99,7 +99,7 @@ func main() {
 			continue
 		}
 		seedPointers = append(seedPointers, &hive.ItemPointer{
-			Dst:       &hive.ItemLocator{
+			Dst: &hive.ItemLocator{
 				Collection: "yt.videos",
 				Id:         strconv.FormatInt(compact, 10),
 			},
