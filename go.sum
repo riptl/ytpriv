@@ -213,6 +213,7 @@ github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2/go.mod h1:UETIi67q
 go.etcd.io/bbolt v1.3.2/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=
 go.od2.network/hive-api v0.0.2 h1:NQuXZtn4ALZzVOMBxw3Z905guSG+h+85afAA5hnr2Js=
 go.od2.network/hive-api v0.0.2/go.mod h1:I6JOEm4KFQMxMXfpuMChKoSGOIlO6MuQ+219NfIdgZQ=
+go.od2.network/hive-api v0.0.4/go.mod h1:I6JOEm4KFQMxMXfpuMChKoSGOIlO6MuQ+219NfIdgZQ=
 go.od2.network/hive-worker v0.0.2 h1:8Tl5PPFJoGX3WJbRSuc2N8yzpt8c9tfodEjnQNpc/Mc=
 go.od2.network/hive-worker v0.0.2/go.mod h1:aXPle43AwG8gdguIdHVQkpnFn8K3+iwxHzV8DdS5OQc=
 go.opencensus.io v0.21.0/go.mod h1:mSImk1erAIZhrmZN+AvHh14ztQfjbGwt4TtuofqLduU=
