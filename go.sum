@@ -211,11 +211,10 @@ github.com/valyala/fastjson v1.6.3/go.mod h1:CLCAqky6SMuOcxStkYQvblddUtoRxhYMGLr
 github.com/valyala/tcplisten v0.0.0-20161114210144-ceec8f93295a/go.mod h1:v3UYOV9WzVtRmSR+PDvWpU/qWl4Wa5LApYYX4ZtKbio=
 github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2/go.mod h1:UETIi67q53MR2AWcXfiuqkDkRtnGDLqkBTpCHuJHxtU=
 go.etcd.io/bbolt v1.3.2/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=
-go.od2.network/hive-api v0.0.2 h1:NQuXZtn4ALZzVOMBxw3Z905guSG+h+85afAA5hnr2Js=
-go.od2.network/hive-api v0.0.2/go.mod h1:I6JOEm4KFQMxMXfpuMChKoSGOIlO6MuQ+219NfIdgZQ=
-go.od2.network/hive-api v0.0.4/go.mod h1:I6JOEm4KFQMxMXfpuMChKoSGOIlO6MuQ+219NfIdgZQ=
-go.od2.network/hive-worker v0.0.2 h1:8Tl5PPFJoGX3WJbRSuc2N8yzpt8c9tfodEjnQNpc/Mc=
-go.od2.network/hive-worker v0.0.2/go.mod h1:aXPle43AwG8gdguIdHVQkpnFn8K3+iwxHzV8DdS5OQc=
+go.od2.network/hive-api v0.2.0 h1:QZoTApP6Z8gECy/gRkdXpm7M9+e2TIe+TTj069o9hS0=
+go.od2.network/hive-api v0.2.0/go.mod h1:I6JOEm4KFQMxMXfpuMChKoSGOIlO6MuQ+219NfIdgZQ=
+go.od2.network/hive-worker v0.1.0 h1:1S8f1psQO0W2ZsVfAV7mxN8iJqWcufU/kn830H09uR8=
+go.od2.network/hive-worker v0.1.0/go.mod h1:WF++2b1TbhP+ISoutde5gWgp7T2pd9dp6oHWEHIWnO4=
 go.opencensus.io v0.21.0/go.mod h1:mSImk1erAIZhrmZN+AvHh14ztQfjbGwt4TtuofqLduU=
 go.opencensus.io v0.22.0/go.mod h1:+kGneAE2xo2IficOXnaByMWTGM9T73dGwxeWcUqIpI8=
 go.uber.org/atomic v1.4.0/go.mod h1:gD2HeocX3+yG+ygLZcrzQJaqmWj9AIm7n08wl/qW/PE=

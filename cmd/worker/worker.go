@@ -17,6 +17,7 @@ import (
 	"github.com/spf13/pflag"
 	yt "github.com/terorie/ytpriv"
 	"go.od2.network/hive-api"
+	worker_api "go.od2.network/hive-api/worker"
 	"go.od2.network/hive-worker"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -60,7 +61,7 @@ func main() {
 	client, err := grpc.Dial(
 		"worker.hive.od2.network:443",
 		grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)),
-		grpc.WithPerRPCCredentials(&hive.WorkerCredentials{Token: *token}),
+		grpc.WithPerRPCCredentials(&worker_api.Credentials{Token: *token}),
 		grpc.WithUnaryInterceptor(grpc_retry.UnaryClientInterceptor(
 			grpc_retry.WithMax(10),
 			grpc_retry.WithBackoff(grpc_retry.BackoffLinearWithJitter(3*time.Second, 0.8)))),
@@ -71,8 +72,8 @@ func main() {
 	}
 
 	// Construct worker
-	assignments := hive.NewAssignmentsClient(client)
-	discovery := hive.NewDiscoveryClient(client)
+	assignments := worker_api.NewAssignmentsClient(client)
+	discovery := worker_api.NewDiscoveryClient(client)
 	simpleWorker := &worker.Simple{
 		Collection:  "yt.videos",
 		Assignments: assignments,
@@ -107,7 +108,7 @@ func main() {
 		})
 	}
 	if len(seedPointers) > 0 {
-		if _, err := discovery.ReportDiscovered(ctx, &hive.ReportDiscoveredRequest{
+		if _, err := discovery.ReportDiscovered(ctx, &worker_api.ReportDiscoveredRequest{
 			Pointers: seedPointers,
 		}); err != nil {
 			log.Fatal("Failed to push seed items", zap.Error(err))
@@ -124,7 +125,7 @@ func main() {
 type Handler struct {
 	Client    *yt.Client
 	Log       *zap.Logger
-	Discovery hive.DiscoveryClient
+	Discovery worker_api.DiscoveryClient
 }
 
 // WorkAssignment processes a single video.
@@ -159,7 +160,7 @@ func (h *Handler) WorkAssignment(ctx context.Context, assign *hive.Assignment) h
 			Timestamp: ptypes.TimestampNow(),
 		})
 	}
-	if _, err := h.Discovery.ReportDiscovered(ctx, &hive.ReportDiscoveredRequest{
+	if _, err := h.Discovery.ReportDiscovered(ctx, &worker_api.ReportDiscoveredRequest{
 		Pointers: discovered,
 	}); err != nil {
 		h.Log.Error("Failed to report discovered", zap.Error(err))
