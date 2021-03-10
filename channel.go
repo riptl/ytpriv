@@ -165,11 +165,19 @@ func ParseChannelVideosStart(res *fasthttp.Response) (*types.ChannelVideosPage, 
 	page.Continuation = string(gridRenderer.GetStringBytes("continuations", "0", "nextContinuationData", "continuation"))
 	for _, item := range gridRenderer.GetArray("items") {
 		renderer := item.Get("gridVideoRenderer")
+		var isLive bool
+		for _, overlay := range renderer.GetArray("thumbnailOverlays") {
+			if string(overlay.GetStringBytes("thumbnailOverlayTimeStatusRenderer", "style")) == "LIVE" {
+				isLive = true
+				break
+			}
+		}
 		page.Videos = append(page.Videos, types.VideoItem{
 			ID:          string(renderer.GetStringBytes("videoId")),
 			Title:       string(renderer.GetStringBytes("title", "runs", "0", "text")),
 			ChannelID:   channelID,
 			ChannelName: channelName,
+			IsLive:      isLive,
 		})
 	}
 	return page, nil

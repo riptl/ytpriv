@@ -19,4 +19,5 @@ type VideoItem struct {
 	ChannelID   string `json:",omitempty"`
 	ChannelName string `json:",omitempty"`
 	Unavailable bool   `json:",omitempty"`
+	IsLive      bool   `json:",omitempty"`
 }
