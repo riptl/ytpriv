@@ -1,0 +1,18 @@
+version: 2
+updates:
+- package-ecosystem: gomod
+  directory: "/"
+  schedule:
+    interval: daily
+    time: "04:00"
+  open-pull-requests-limit: 10
+  ignore:
+  - dependency-name: github.com/golang/protobuf
+    versions:
+    - 1.5.1
+  - dependency-name: go.od2.network/hive-worker
+    versions:
+    - 0.1.0
+  - dependency-name: go.od2.network/hive-api
+    versions:
+    - 0.2.0
