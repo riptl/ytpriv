@@ -10,7 +10,7 @@ require (
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.7.0
-	github.com/valyala/fasthttp v1.29.0
+	github.com/valyala/fasthttp v1.30.0
 	github.com/valyala/fastjson v1.6.3
 	go.od2.network/hive-api v0.2.0
 	go.od2.network/hive-worker v0.1.0
