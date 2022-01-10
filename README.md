@@ -1,5 +1,8 @@
 # ytpriv 💾
 
+**Note: This software is not maintained and will be archived soon.**
+I do not provide support in any way. Learn to code and fork this repository if you need a feature/bugfix.
+
 A fast tool for exporting YouTube data using their undocumented JSON APIs.
 
 No API keys or logins required, and no stability guarantees given.
